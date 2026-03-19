@@ -3,7 +3,6 @@
 // ============================================================
 
 const auth = firebase.auth();
-const db   = firebase.firestore();
 
 // ── Redirect if not logged in (call on protected pages) ──
 function requireAuth(redirectTo = 'index.html') {
