@@ -168,6 +168,17 @@ async function loadResults() {
 // RENDERING
 // ─────────────────────────────────────────────────────────
 
+// ── Build bracket connector column (n pairs of top+bottom halves) ─
+function renderConnectors(pairCount) {
+  const pairs = Array.from({ length: pairCount }, () =>
+    `<div class="connector-pair">
+      <div class="connector-half top"></div>
+      <div class="connector-half bottom"></div>
+    </div>`
+  ).join('');
+  return `<div class="bracket-connectors">${pairs}</div>`;
+}
+
 function renderBracket() {
   const container = document.getElementById('bracket-container');
   if (!container) return;
@@ -176,9 +187,12 @@ function renderBracket() {
     <div class="conference-bracket west">
       <div class="conf-title">ЗАПАДНАЯ КОНФЕРЕНЦИЯ</div>
       <div class="bracket-rounds">
-        ${renderRound(['w1','w2','w3','w4'], 0, 'west', true)}
-        ${renderRound(['w1w2','w3w4'], 1, 'west', true)}
-        ${renderRound(['wf'], 2, 'west', true)}
+        ${renderRound(['w1','w2','w3','w4'], 0)}
+        ${renderConnectors(2)}
+        ${renderRound(['w1w2','w3w4'], 1)}
+        ${renderConnectors(1)}
+        ${renderRound(['wf'], 2)}
+        <div class="bracket-connector-final"></div>
       </div>
     </div>
 
@@ -191,9 +205,12 @@ function renderBracket() {
     <div class="conference-bracket east">
       <div class="conf-title">ВОСТОЧНАЯ КОНФЕРЕНЦИЯ</div>
       <div class="bracket-rounds">
-        ${renderRound(['e1','e2','e3','e4'], 0, 'east', false)}
-        ${renderRound(['e1e2','e3e4'], 1, 'east', false)}
-        ${renderRound(['ef'], 2, 'east', false)}
+        ${renderRound(['e1','e2','e3','e4'], 0)}
+        ${renderConnectors(2)}
+        ${renderRound(['e1e2','e3e4'], 1)}
+        ${renderConnectors(1)}
+        ${renderRound(['ef'], 2)}
+        <div class="bracket-connector-final"></div>
       </div>
     </div>
   `;
@@ -239,7 +256,7 @@ function renderBracketList() {
   });
 }
 
-function renderRound(seriesIds, roundIdx, conf, alignStart) {
+function renderRound(seriesIds, roundIdx) {
   const label = ROUND_NAMES[roundIdx];
   const cardsHtml = seriesIds.map(sid => `
     <div class="series-wrapper">
