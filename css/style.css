@@ -461,25 +461,44 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 
 .connector-pair {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  position: relative;
 }
 
-/* West: connectors branch right */
+/* Vertical bar from card-center-1 (25%) to card-center-2 (75%).
+   Cards are space-around in a 4-item column → centers at 12.5/37.5/62.5/87.5%
+   → within each pair of 2, centers sit at 25% and 75% of the pair. */
+.connector-pair::before {
+  content: '';
+  position: absolute;
+  right: 0;          /* West: R2 side is to the right */
+  top: 25%;
+  bottom: 25%;
+  width: 1px;
+  background: var(--border-glow);
+}
+
 .connector-half {
   flex: 1;
-  border-right: 1px solid var(--border-glow);
+  position: relative;
 }
-.connector-half.top    { border-top:    1px solid var(--border-glow); }
-.connector-half.bottom { border-bottom: 1px solid var(--border-glow); }
 
-/* East: connectors branch left (row-reverse mirrors visually) */
-.east .connector-half {
-  border-right: none;
-  border-left: 1px solid var(--border-glow);
+/* Horizontal arm at center of each half (= 25% and 75% of the pair) */
+.connector-half::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-glow);
+  transform: translateY(-0.5px);
 }
-.east .connector-half.top    { border-top:    1px solid var(--border-glow); }
-.east .connector-half.bottom { border-bottom: 1px solid var(--border-glow); }
+
+/* East: vertical bar on the left side (R2 is to the left in row-reverse) */
+.east .connector-pair::before {
+  right: auto;
+  left: 0;
+}
 
 /* Short horizontal line connecting R3 to the final card */
 .bracket-connector-final {
