@@ -8,6 +8,7 @@ let resultsData = {};   // actual results loaded from Firestore
 let currentUser = null;
 let currentUserData = null;
 let isLocked = false;   // true after admin locks full-bracket submissions
+let isSubmitted = false; // true once user has saved their prediction (one-time)
 
 // ── Series ID helpers ─────────────────────────────────────
 
@@ -71,7 +72,7 @@ function roundOfSeries(sid) {
 
 // ── Pick a winner for a series ────────────────────────────
 function pickWinner(sid, team) {
-  if (isLocked) return;
+  if (isLocked || isSubmitted) return;
   const result = resultForSeries(sid);
   if (result?.complete) return;        // series already finished, no editing
 
@@ -88,7 +89,7 @@ function pickWinner(sid, team) {
 }
 
 function pickScore(sid, score) {
-  if (isLocked) return;
+  if (isLocked || isSubmitted) return;
   const result = resultForSeries(sid);
   if (result?.complete) return;
   picks[sid] = { ...picks[sid], score };
@@ -132,13 +133,18 @@ async function savePrediction() {
   try {
     await db.collection('predictions').doc(currentUser.uid).set({
       fullBracket: picks,
+      fullBracketSubmitted: true,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       username: currentUserData?.username || ''
     }, { merge: true });
-    showToast('Прогноз сохранён!', 'success');
+    isSubmitted = true;
+    showToast('Прогноз сохранён! Изменения больше невозможны.', 'success');
+    const submittedBanner = document.getElementById('submitted-banner');
+    if (submittedBanner) submittedBanner.classList.remove('hidden');
+    btn.textContent = 'Прогноз отправлен';
+    renderBracket();
   } catch (e) {
     showToast('Ошибка сохранения: ' + e.message, 'error');
-  } finally {
     btn.disabled = false;
     btn.textContent = 'Сохранить прогноз';
   }
@@ -149,6 +155,7 @@ async function loadPrediction(uid) {
   const snap = await db.collection('predictions').doc(uid).get();
   if (snap.exists && snap.data().fullBracket) {
     picks = snap.data().fullBracket;
+    isSubmitted = snap.data().fullBracketSubmitted || false;
   }
 }
 
@@ -246,7 +253,7 @@ function renderSeriesCard(sid, isFinal = false) {
     </div>`;
   };
 
-  const gamesRow = renderGamesRowHTML(sid, pick, result);
+  const gamesRow = renderGamesRowHTML(sid, pick, result, t2);
 
   const cardCls = `series-card${isFinal?' final-series-card':''}${complete?' complete':''}${locked?' locked':''}`;
 
@@ -258,13 +265,16 @@ function renderSeriesCard(sid, isFinal = false) {
 }
 
 const SCORES = ['4:0','4:1','4:2','4:3'];
+const SCORES_REVERSED = ['0:4','1:4','2:4','3:4'];
 
-function renderGamesRowHTML(sid, pick, result) {
-  const btns = SCORES.map(s => {
+function renderGamesRowHTML(sid, pick, result, t2) {
+  const useReversed = pick.winner && t2 && pick.winner === t2;
+  const displayScores = useReversed ? SCORES_REVERSED : SCORES;
+  const btns = SCORES.map((s, i) => {
     let cls = 'games-btn';
     if (result?.complete && result.score === s) cls += ' result';
     else if (!result?.complete && pick.score === s) cls += ' selected';
-    return `<button class="${cls}" data-sid="${sid}" data-score="${s}">${s}</button>`;
+    return `<button class="${cls}" data-sid="${sid}" data-score="${s}">${displayScores[i]}</button>`;
   }).join('');
   return `<div class="series-games-row">${btns}</div>`;
 }
@@ -274,11 +284,14 @@ function renderSeriesGamesRow(sid) {
   if (!row) return;
   const pick   = picks[sid] || {};
   const result = resultForSeries(sid);
-  row.innerHTML = SCORES.map(s => {
+  const [, t2] = teamsForSeries(sid);
+  const useReversed = pick.winner && t2 && pick.winner === t2;
+  const displayScores = useReversed ? SCORES_REVERSED : SCORES;
+  row.innerHTML = SCORES.map((s, i) => {
     let cls = 'games-btn';
     if (result?.complete && result.score === s) cls += ' result';
     else if (!result?.complete && pick.score === s) cls += ' selected';
-    return `<button class="${cls}" data-sid="${sid}" data-score="${s}">${s}</button>`;
+    return `<button class="${cls}" data-sid="${sid}" data-score="${s}">${displayScores[i]}</button>`;
   }).join('');
   row.querySelectorAll('.games-btn').forEach(el => {
     el.addEventListener('click', () => pickScore(el.dataset.sid, el.dataset.score));
@@ -302,6 +315,13 @@ async function initBracket(user, userData) {
     if (banner) banner.classList.remove('hidden');
     const saveBtn = document.getElementById('save-btn');
     if (saveBtn) saveBtn.disabled = true;
+  }
+
+  if (isSubmitted) {
+    const submittedBanner = document.getElementById('submitted-banner');
+    if (submittedBanner) submittedBanner.classList.remove('hidden');
+    const saveBtn = document.getElementById('save-btn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Прогноз отправлен'; }
   }
 
   document.getElementById('save-btn')?.addEventListener('click', savePrediction);
