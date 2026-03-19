@@ -23,12 +23,14 @@
     <!-- LOGIN FORM -->
     <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
       <div class="form-group">
-        <label>Email</label>
-        <input type="email" class="form-control" id="login-email" placeholder="you@example.com" required>
+        <label>Логин</label>
+        <input type="text" class="form-control" id="login-username"
+               placeholder="Твой никнейм" required autocomplete="username">
       </div>
       <div class="form-group">
         <label>Пароль</label>
-        <input type="password" class="form-control" id="login-password" placeholder="••••••••" required>
+        <input type="password" class="form-control" id="login-password"
+               placeholder="••••••••" required autocomplete="current-password">
       </div>
       <div class="auth-error" id="login-error"></div>
       <button type="submit" class="btn btn-primary btn-lg" id="login-btn">Войти</button>
@@ -37,18 +39,16 @@
     <!-- REGISTER FORM -->
     <form class="auth-form hidden" id="register-form" onsubmit="handleRegister(event)">
       <div class="form-group">
-        <label>Имя / Никнейм</label>
+        <label>Логин / Никнейм</label>
         <input type="text" class="form-control" id="reg-name"
-               placeholder="Например: HockeyFan99" required minlength="2" maxlength="32">
-      </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" class="form-control" id="reg-email" placeholder="you@example.com" required>
+               placeholder="Например: ХоккейФан99" required minlength="2" maxlength="32"
+               autocomplete="username">
       </div>
       <div class="form-group">
         <label>Пароль</label>
         <input type="password" class="form-control" id="reg-password"
-               placeholder="Минимум 6 символов" required minlength="6">
+               placeholder="Минимум 6 символов" required minlength="6"
+               autocomplete="new-password">
       </div>
       <div class="auth-error" id="reg-error"></div>
       <button type="submit" class="btn btn-primary btn-lg" id="reg-btn">Создать аккаунт</button>
@@ -84,7 +84,7 @@
     btn.textContent = 'Вход…';
     try {
       await loginUser(
-        document.getElementById('login-email').value.trim(),
+        document.getElementById('login-username').value.trim(),
         document.getElementById('login-password').value
       );
       window.location.href = 'app.html';
@@ -105,9 +105,8 @@
     btn.textContent = 'Создание…';
     try {
       await registerUser(
-        document.getElementById('reg-email').value.trim(),
-        document.getElementById('reg-password').value,
-        document.getElementById('reg-name').value.trim()
+        document.getElementById('reg-name').value.trim(),
+        document.getElementById('reg-password').value
       );
       window.location.href = 'app.html';
     } catch (ex) {
@@ -120,14 +119,14 @@
 
   function friendlyAuthError(code) {
     const map = {
-      'auth/user-not-found':      'Пользователь не найден.',
-      'auth/wrong-password':      'Неверный пароль.',
-      'auth/email-already-in-use':'Этот email уже зарегистрирован.',
-      'auth/invalid-email':       'Некорректный email.',
-      'auth/weak-password':       'Слишком простой пароль (минимум 6 символов).',
-      'auth/too-many-requests':   'Слишком много попыток. Попробуй позже.',
+      'auth/user-not-found':       'Пользователь не найден.',
+      'auth/wrong-password':       'Неверный пароль.',
+      'auth/invalid-credential':   'Неверный логин или пароль.',
+      'auth/email-already-in-use': 'Этот логин уже занят.',
+      'auth/weak-password':        'Слишком простой пароль (минимум 6 символов).',
+      'auth/too-many-requests':    'Слишком много попыток. Попробуй позже.',
     };
-    return map[code] || 'Ошибка входа. Попробуй ещё раз.';
+    return map[code] || 'Ошибка. Попробуй ещё раз.';
   }
 </script>
 </body>

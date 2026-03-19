@@ -4,6 +4,24 @@
 
 const auth = firebase.auth();
 
+// ── Username → fake email for Firebase Auth ───────────────
+// Firebase requires an email, so we generate one from the username.
+// The email is never shown to the user.
+const _TRANSLIT = {
+  'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh',
+  'з':'z','и':'i','й':'j','к':'k','л':'l','м':'m','н':'n','о':'o',
+  'п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts',
+  'ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'
+};
+
+function usernameToEmail(username) {
+  const slug = username.toLowerCase()
+    .split('').map(c => _TRANSLIT[c] ?? c).join('')
+    .replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_')
+    .replace(/^_|_$/, '').slice(0, 30) || 'user';
+  return `${slug}@khlpo.local`;
+}
+
 // ── Redirect if not logged in (call on protected pages) ──
 function requireAuth(redirectTo = 'index.html') {
   return new Promise((resolve) => {
@@ -15,7 +33,7 @@ function requireAuth(redirectTo = 'index.html') {
       let userData = await getUserData(user.uid);
       // Если документ не создался при регистрации — создаём сейчас
       if (!userData) {
-        userData = { username: user.email.split('@')[0], email: user.email, isAdmin: false };
+        userData = { username: 'Игрок', isAdmin: false };
         await db.collection('users').doc(user.uid).set({
           ...userData,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -44,20 +62,21 @@ async function getUserData(uid) {
   }
 }
 
-// ── Register new user ─────────────────────────────────────
-async function registerUser(email, password, username) {
+// ── Register new user (by username, no email needed) ─────
+async function registerUser(username, password) {
+  const email = usernameToEmail(username);
   const cred = await auth.createUserWithEmailAndPassword(email, password);
   await db.collection('users').doc(cred.user.uid).set({
     username,
-    email,
     isAdmin: false,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
   return cred.user;
 }
 
-// ── Login ─────────────────────────────────────────────────
-async function loginUser(email, password) {
+// ── Login (by username) ───────────────────────────────────
+async function loginUser(username, password) {
+  const email = usernameToEmail(username);
   const cred = await auth.signInWithEmailAndPassword(email, password);
   return cred.user;
 }
@@ -83,6 +102,6 @@ function renderUserChip(userData) {
 function applyAdminUI(userData) {
   const adminLinks = document.querySelectorAll('.admin-only');
   adminLinks.forEach(el => {
-    el.style.display = userData?.isAdmin ? '' : 'none';
+    el.classList.toggle('hidden', !userData?.isAdmin);
   });
 }
