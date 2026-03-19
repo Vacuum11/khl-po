@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Таблица лидеров — КХЛ ПО 2026</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="navbar-brand" href="app.html">
+    🏒
+    <span>КХЛ&nbsp;ПО&nbsp;2026</span>
+    <span class="logo-badge">ПРОГНОЗ</span>
+  </a>
+  <div class="navbar-nav">
+    <a class="nav-link" href="app.html">Мой прогноз</a>
+    <a class="nav-link active" href="leaderboard.html">Таблица лидеров</a>
+    <a class="nav-link admin-only hidden" href="admin.html">⚙ Админ</a>
+  </div>
+  <div class="navbar-right">
+    <div class="user-chip" id="user-chip"></div>
+    <button class="btn btn-ghost btn-sm" onclick="logoutUser()">Выйти</button>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-header">
+    <h2>🏆 Таблица лидеров</h2>
+    <p>Обновляется автоматически каждую минуту</p>
+  </div>
+
+  <!-- MODE TOGGLE -->
+  <div class="mode-tabs" style="margin-bottom:1.5rem">
+    <button class="mode-tab active" id="lb-tab-full" onclick="switchLbMode('full')">
+      <span class="tab-label">Полная сетка</span>
+      <span class="tab-desc">Прогнозы на весь турнир</span>
+    </button>
+    <button class="mode-tab" id="lb-tab-round" onclick="switchLbMode('round')">
+      <span class="tab-label">По раундам</span>
+      <span class="tab-desc">Раундовые прогнозы</span>
+    </button>
+  </div>
+
+  <div class="leaderboard-wrap">
+    <!-- Column headers -->
+    <div class="lb-header-row">
+      <div>#</div>
+      <div>Участник</div>
+      <div style="text-align:right">Всего</div>
+      <div style="text-align:center">1/8</div>
+      <div style="text-align:center">1/4</div>
+      <div style="text-align:center">1/2</div>
+      <div style="text-align:center">Финал</div>
+    </div>
+    <div id="leaderboard-body">
+      <div class="loading-overlay"><div class="spinner"></div> Загрузка…</div>
+    </div>
+  </div>
+
+  <div style="margin-top:1.5rem">
+    <div class="alert alert-info" style="font-size:.82rem">
+      <strong>Система очков:</strong>
+      Угаданный победитель 1/8 = <strong>1 очко</strong> &nbsp;·&nbsp;
+      1/4 = <strong>2</strong> &nbsp;·&nbsp;
+      1/2 = <strong>4</strong> &nbsp;·&nbsp;
+      Финал = <strong>8</strong> &nbsp;·&nbsp;
+      Бонус за точное кол-во игр: <strong>+1</strong> к каждой серии
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/leaderboard.js"></script>
+
+<script>
+  let lbMode = 'full';
+
+  requireAuth().then(({ user, userData }) => {
+    window._myUid = user.uid;
+    renderUserChip(userData);
+    applyAdminUI(userData);
+    subscribeLeaderboard(lbMode);
+  });
+
+  function switchLbMode(mode) {
+    lbMode = mode;
+    document.getElementById('lb-tab-full').classList.toggle('active', mode === 'full');
+    document.getElementById('lb-tab-round').classList.toggle('active', mode === 'round');
+    loadLeaderboard(mode);
+  }
+</script>
+</body>
+</html>

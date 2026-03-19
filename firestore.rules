@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users: читать всем авторизованным, писать только своё
+    match /users/{userId} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth.uid == userId;
+    }
+
+    // Predictions: читать всем авторизованным, писать только своё
+    match /predictions/{userId} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth.uid == userId;
+    }
+
+    // Settings/results: читать всем, писать только администраторам
+    match /settings/{doc} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+  }
+}

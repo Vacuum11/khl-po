@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мой прогноз — КХЛ ПО 2026</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="navbar-brand" href="app.html">
+    🏒
+    <span>КХЛ&nbsp;ПО&nbsp;2026</span>
+    <span class="logo-badge">ПРОГНОЗ</span>
+  </a>
+  <div class="navbar-nav">
+    <a class="nav-link active" href="app.html">Мой прогноз</a>
+    <a class="nav-link" href="leaderboard.html">Таблица лидеров</a>
+    <a class="nav-link admin-only hidden" href="admin.html">⚙ Админ</a>
+  </div>
+  <div class="navbar-right">
+    <div class="user-chip" id="user-chip"></div>
+    <button class="btn btn-ghost btn-sm" onclick="logoutUser()">Выйти</button>
+  </div>
+</nav>
+
+<!-- LOCKED BANNER -->
+<div id="locked-banner" class="hidden" style="background:rgba(200,16,46,.1);border-bottom:1px solid rgba(200,16,46,.25);padding:.65rem 2rem;font-size:.85rem;color:#fca5a5;text-align:center">
+  🔒 Прогнозы заблокированы — плей-офф уже начался. Ты можешь смотреть свои пики, но не изменять их.
+</div>
+
+<div class="page-wrapper">
+  <div class="page-header">
+    <h2>Мой прогноз</h2>
+    <p>Выбери победителей серий и количество игр. Чем точнее — тем больше очков!</p>
+  </div>
+
+  <!-- MODE SELECTOR -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-full" onclick="switchMode('full')">
+      <span class="tab-label">🏆 Полная сетка</span>
+      <span class="tab-desc">Прогноз на весь турнир сразу</span>
+    </button>
+    <button class="mode-tab" id="tab-round" onclick="switchMode('round')">
+      <span class="tab-label">📋 По раундам</span>
+      <span class="tab-desc">Прогноз перед каждым раундом</span>
+    </button>
+  </div>
+
+  <!-- SCORING INFO -->
+  <div class="alert alert-info" style="margin-bottom:1.5rem">
+    <strong>Система очков:</strong>
+    1/8 финала = 1 очко &nbsp;·&nbsp;
+    1/4 = 2 &nbsp;·&nbsp;
+    1/2 = 4 &nbsp;·&nbsp;
+    Финал КГ = 8 &nbsp;·&nbsp;
+    +1 бонус за правильное кол-во игр в серии
+  </div>
+
+  <!-- FULL BRACKET VIEW -->
+  <div id="view-full">
+    <div id="bracket-container" class="bracket-container">
+      <div class="loading-overlay"><div class="spinner"></div> Загрузка сетки…</div>
+    </div>
+  </div>
+
+  <!-- ROUND-BY-ROUND VIEW -->
+  <div id="view-round" class="hidden rounds-view">
+    <div id="rounds-container">
+      <div class="loading-overlay"><div class="spinner"></div> Загрузка…</div>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE BAR (full bracket mode) -->
+<div class="save-bar" id="save-bar">
+  <div>
+    <div class="save-bar-info" id="save-info">Заполнено: 0 / 15 серий</div>
+    <div style="display:flex;align-items:center;gap:.5rem;margin-top:.25rem">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <span style="font-size:.75rem;color:var(--text-3)">прогресс</span>
+    </div>
+  </div>
+  <button class="btn btn-gold" id="save-btn" disabled>Сохранить прогноз</button>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/bracket.js"></script>
+<script src="js/rounds.js"></script>
+
+<script>
+  let currentMode = 'full';
+
+  requireAuth().then(({ user, userData }) => {
+    window._myUid = user.uid;
+    renderUserChip(userData);
+    applyAdminUI(userData);
+    initBracket(user, userData);
+  });
+
+  function switchMode(mode) {
+    currentMode = mode;
+    document.getElementById('view-full').classList.toggle('hidden', mode !== 'full');
+    document.getElementById('view-round').classList.toggle('hidden', mode !== 'round');
+    document.getElementById('save-bar').classList.toggle('hidden', mode !== 'full');
+    document.getElementById('tab-full').classList.toggle('active', mode === 'full');
+    document.getElementById('tab-round').classList.toggle('active', mode === 'round');
+
+    if (mode === 'round') {
+      requireAuth().then(({ user, userData }) => {
+        initRounds(user, userData);
+      });
+    }
+  }
+</script>
+</body>
+</html>

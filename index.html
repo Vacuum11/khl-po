@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>КХЛ 2026 — Прогнозы на плей-офф</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>🏒 КХЛ ПО 2026</h1>
+      <div class="subtitle">Прогнозы на плей-офф</div>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tab-login"   onclick="switchTab('login')">Вход</div>
+      <div class="auth-tab"        id="tab-register" onclick="switchTab('register')">Регистрация</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" class="form-control" id="login-email" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label>Пароль</label>
+        <input type="password" class="form-control" id="login-password" placeholder="••••••••" required>
+      </div>
+      <div class="auth-error" id="login-error"></div>
+      <button type="submit" class="btn btn-primary btn-lg" id="login-btn">Войти</button>
+    </form>
+
+    <!-- REGISTER FORM -->
+    <form class="auth-form hidden" id="register-form" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label>Имя / Никнейм</label>
+        <input type="text" class="form-control" id="reg-name"
+               placeholder="Например: HockeyFan99" required minlength="2" maxlength="32">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" class="form-control" id="reg-email" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label>Пароль</label>
+        <input type="password" class="form-control" id="reg-password"
+               placeholder="Минимум 6 символов" required minlength="6">
+      </div>
+      <div class="auth-error" id="reg-error"></div>
+      <button type="submit" class="btn btn-primary btn-lg" id="reg-btn">Создать аккаунт</button>
+    </form>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // Redirect to app if already logged in
+  redirectIfLoggedIn('app.html');
+
+  function switchTab(tab) {
+    document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+    document.getElementById('register-form').classList.toggle('hidden', tab !== 'register');
+    document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+    document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    const err = document.getElementById('login-error');
+    err.classList.remove('show');
+    btn.disabled = true;
+    btn.textContent = 'Вход…';
+    try {
+      await loginUser(
+        document.getElementById('login-email').value.trim(),
+        document.getElementById('login-password').value
+      );
+      window.location.href = 'app.html';
+    } catch (ex) {
+      err.textContent = friendlyAuthError(ex.code);
+      err.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Войти';
+    }
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('reg-btn');
+    const err = document.getElementById('reg-error');
+    err.classList.remove('show');
+    btn.disabled = true;
+    btn.textContent = 'Создание…';
+    try {
+      await registerUser(
+        document.getElementById('reg-email').value.trim(),
+        document.getElementById('reg-password').value,
+        document.getElementById('reg-name').value.trim()
+      );
+      window.location.href = 'app.html';
+    } catch (ex) {
+      err.textContent = friendlyAuthError(ex.code);
+      err.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Создать аккаунт';
+    }
+  }
+
+  function friendlyAuthError(code) {
+    const map = {
+      'auth/user-not-found':      'Пользователь не найден.',
+      'auth/wrong-password':      'Неверный пароль.',
+      'auth/email-already-in-use':'Этот email уже зарегистрирован.',
+      'auth/invalid-email':       'Некорректный email.',
+      'auth/weak-password':       'Слишком простой пароль (минимум 6 символов).',
+      'auth/too-many-requests':   'Слишком много попыток. Попробуй позже.',
+    };
+    return map[code] || 'Ошибка входа. Попробуй ещё раз.';
+  }
+</script>
+</body>
+</html>

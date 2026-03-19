@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Администратор — КХЛ ПО 2026</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="navbar-brand" href="app.html">
+    🏒
+    <span>КХЛ&nbsp;ПО&nbsp;2026</span>
+    <span class="logo-badge">ПРОГНОЗ</span>
+  </a>
+  <div class="navbar-nav">
+    <a class="nav-link" href="app.html">Мой прогноз</a>
+    <a class="nav-link" href="leaderboard.html">Таблица лидеров</a>
+    <a class="nav-link active" href="admin.html">⚙ Админ</a>
+  </div>
+  <div class="navbar-right">
+    <div class="user-chip" id="user-chip"></div>
+    <button class="btn btn-ghost btn-sm" onclick="logoutUser()">Выйти</button>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-header">
+    <h2>⚙ Панель администратора</h2>
+    <p>Вводи результаты серий и управляй состоянием турнира</p>
+  </div>
+
+  <div id="admin-access-denied" class="hidden">
+    <div class="alert alert-danger">
+      ⛔ Доступ запрещён. Эта страница только для администраторов.
+    </div>
+  </div>
+
+  <div id="admin-panel" class="hidden admin-wrap">
+
+    <!-- ROUND CONTROL -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title">🎮 Управление турниром</div>
+      <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+        <div class="form-group" style="flex-shrink:0">
+          <label>Текущий активный раунд</label>
+          <select class="admin-select" id="current-round-sel" style="min-width:180px">
+            <option value="1">Раунд 1 — 1/8 финала</option>
+            <option value="2">Раунд 2 — 1/4 финала</option>
+            <option value="3">Раунд 3 — 1/2 финала</option>
+            <option value="4">Раунд 4 — Финал КГ</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.85rem;color:var(--text-2)">
+            <input type="checkbox" id="lock-full-bracket" style="width:16px;height:16px;accent-color:var(--red)">
+            <span>🔒 Заблокировать прогнозы на полную сетку</span>
+          </label>
+          <div style="font-size:.75rem;color:var(--text-3);margin-top:.3rem;margin-left:1.5rem">
+            Включи, когда плей-офф начался — никто не сможет изменить уже сделанные прогнозы
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SERIES RESULTS -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title">📊 Результаты серий</div>
+      <div class="alert alert-warn" style="margin-bottom:1rem;font-size:.83rem">
+        После ввода результата отметь серию как "завершена" — только тогда начисляются очки.
+        Победитель следующего раунда подтягивается автоматически.
+      </div>
+      <div id="admin-series-list">
+        <div class="loading-overlay"><div class="spinner"></div> Загрузка…</div>
+      </div>
+    </div>
+
+    <!-- SAVE BUTTON -->
+    <div style="display:flex;justify-content:flex-end;gap:1rem">
+      <button class="btn btn-ghost" onclick="loadAdminData().then(renderAdminPanel)">
+        ↺ Сбросить изменения
+      </button>
+      <button class="btn btn-gold btn-lg" id="save-admin-btn">
+        Сохранить всё
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+
+<script>
+  requireAuth().then(({ user, userData }) => {
+    renderUserChip(userData);
+
+    if (!userData?.isAdmin) {
+      document.getElementById('admin-access-denied').classList.remove('hidden');
+      return;
+    }
+
+    document.getElementById('admin-panel').classList.remove('hidden');
+    initAdmin();
+  });
+</script>
+</body>
+</html>
