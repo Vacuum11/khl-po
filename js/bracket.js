@@ -188,9 +188,9 @@ function renderBracket() {
     <div class="conference-bracket east">
       <div class="conf-title">ВОСТОЧНАЯ КОНФЕРЕНЦИЯ</div>
       <div class="bracket-rounds">
-        ${renderRound(['ef'], 2, 'east', false)}
-        ${renderRound(['e1e2','e3e4'], 1, 'east', false)}
         ${renderRound(['e1','e2','e3','e4'], 0, 'east', false)}
+        ${renderRound(['e1e2','e3e4'], 1, 'east', false)}
+        ${renderRound(['ef'], 2, 'east', false)}
       </div>
     </div>
   `;
