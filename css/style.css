@@ -408,8 +408,12 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   gap: 0;
   flex: 1;
   align-items: stretch;
-  min-height: 540px;           /* ensure enough vertical room for 4 R1 series */
+  min-height: 540px;
 }
+
+/* West: R1 left → Final center; East: R1 right → Final center */
+.west .bracket-rounds { flex-direction: row; }
+.east .bracket-rounds { flex-direction: row-reverse; }
 
 .bracket-round {
   display: flex;
@@ -642,6 +646,7 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   border-radius: var(--radius);
   overflow: hidden;
   width: 100%;
+  flex: none;                  /* prevent stretch to full bracket height */
   box-shadow: 0 0 30px var(--gold-glow);
 }
 
