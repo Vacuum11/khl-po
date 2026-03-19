@@ -72,6 +72,17 @@
   </div>
 </div>
 
+<!-- PICKS MODAL -->
+<div id="picks-modal" class="modal-overlay hidden" onclick="closePicksModal()">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="picks-modal-title">Прогноз</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closePicksModal()">✕</button>
+    </div>
+    <div id="picks-modal-body" class="modal-body"></div>
+  </div>
+</div>
+
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
