@@ -93,6 +93,7 @@ function pickScore(sid, score) {
   if (result?.complete) return;
   picks[sid] = { ...picks[sid], score };
   renderSeriesGamesRow(sid);
+  renderBracketList();
 }
 
 function invalidateDownstream(sid, oldWinner) {
@@ -206,6 +207,36 @@ function renderBracket() {
   container.querySelectorAll('.games-btn').forEach(el => {
     el.addEventListener('click', () => pickScore(el.dataset.sid, el.dataset.score));
   });
+
+  renderBracketList();
+}
+
+// ── Mobile: vertical list view of the full bracket ───────
+const BRACKET_ROUNDS_LIST = [
+  { name: '1/8 финала',    ids: ['w1','w2','w3','w4','e1','e2','e3','e4'] },
+  { name: '1/4 финала',    ids: ['w1w2','w3w4','e1e2','e3e4'] },
+  { name: '1/2 финала',    ids: ['wf','ef'] },
+  { name: 'Кубок Гагарина', ids: ['final'] }
+];
+
+function renderBracketList() {
+  const container = document.getElementById('bracket-list');
+  if (!container) return;
+
+  container.innerHTML = BRACKET_ROUNDS_LIST.map(({ name, ids }) => {
+    const cards = ids.map(sid => renderSeriesCard(sid, sid === 'final', true)).join('');
+    return `<div class="round-section">
+      <div class="round-section-title">${name}</div>
+      <div class="series-grid">${cards}</div>
+    </div>`;
+  }).join('');
+
+  container.querySelectorAll('.series-team[data-sid]').forEach(el => {
+    el.addEventListener('click', () => pickWinner(el.dataset.sid, el.dataset.team));
+  });
+  container.querySelectorAll('.games-btn').forEach(el => {
+    el.addEventListener('click', () => pickScore(el.dataset.sid, el.dataset.score));
+  });
 }
 
 function renderRound(seriesIds, roundIdx, conf, alignStart) {
@@ -226,7 +257,7 @@ function renderRound(seriesIds, roundIdx, conf, alignStart) {
   `;
 }
 
-function renderSeriesCard(sid, isFinal = false) {
+function renderSeriesCard(sid, isFinal = false, noId = false) {
   const [t1, t2]  = teamsForSeries(sid);
   const pick      = picks[sid] || {};
   const result    = resultForSeries(sid);
@@ -251,8 +282,9 @@ function renderSeriesCard(sid, isFinal = false) {
   const gamesRow = renderGamesRowHTML(sid, pick, result, t2);
 
   const cardCls = `series-card${isFinal?' final-series-card':''}${complete?' complete':''}${locked?' locked':''}`;
+  const idAttr = noId ? '' : ` id="card-${sid}"`;
 
-  return `<div class="${cardCls}" id="card-${sid}">
+  return `<div class="${cardCls}"${idAttr}>
     ${teamHtml(t1, true)}
     ${teamHtml(t2, false)}
     ${gamesRow}

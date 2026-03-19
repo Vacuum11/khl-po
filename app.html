@@ -66,13 +66,20 @@
 
   <!-- FULL BRACKET VIEW -->
   <div id="view-full">
-    <div class="bracket-scroll-hint">
-      ← прокрути сетку горизонтально →
-    </div>
-    <div class="bracket-scroll-wrap">
-      <div id="bracket-container" class="bracket-container">
-        <div class="loading-overlay"><div class="spinner"></div> Загрузка сетки…</div>
+    <!-- Desktop: horizontal bracket grid -->
+    <div class="bracket-desktop-only">
+      <div class="bracket-scroll-hint">
+        ← прокрути сетку горизонтально →
       </div>
+      <div class="bracket-scroll-wrap">
+        <div id="bracket-container" class="bracket-container">
+          <div class="loading-overlay"><div class="spinner"></div> Загрузка сетки…</div>
+        </div>
+      </div>
+    </div>
+    <!-- Mobile: vertical list view -->
+    <div id="bracket-list" class="bracket-mobile-only rounds-view">
+      <div class="loading-overlay"><div class="spinner"></div> Загрузка…</div>
     </div>
   </div>
 
