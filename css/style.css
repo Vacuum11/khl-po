@@ -610,16 +610,30 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 /* ── FINAL ──────────────────────────────────────────── */
 .final-center {
   display: flex;
+  flex-direction: column;  /* conf-title-spacer on top, final-rounds below */
+  padding: 0 1.5rem;
+  min-width: 210px;
+}
+
+/* Invisible spacer matching .conf-title height so bracket-rounds aligns with
+   the conference's bracket-rounds (which sit below conf-title) */
+.conf-title-spacer {
+  visibility: hidden;
+  flex-shrink: 0;
+}
+
+/* The actual content area — mirrors bracket-rounds, centers card inside */
+.final-rounds {
+  flex: 1;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0 1.5rem;
-  min-width: 210px;
   position: relative;
 }
-/* Horizontal lines connecting conference R3 → final card */
-.final-center::before,
-.final-center::after {
+/* Horizontal lines connecting R3 → final card, positioned within final-rounds */
+.final-rounds::before,
+.final-rounds::after {
   content: '';
   position: absolute;
   top: 50%;
@@ -627,8 +641,8 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   height: 1px;
   background: var(--border-glow);
 }
-.final-center::before { left: 0; }
-.final-center::after  { right: 0; }
+.final-rounds::before { left: -1.5rem; }
+.final-rounds::after  { right: -1.5rem; }
 
 .final-label {
   font-family: 'Oswald', sans-serif;
