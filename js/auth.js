@@ -12,7 +12,15 @@ function requireAuth(redirectTo = 'index.html') {
         window.location.href = redirectTo;
         return;
       }
-      const userData = await getUserData(user.uid);
+      let userData = await getUserData(user.uid);
+      // Если документ не создался при регистрации — создаём сейчас
+      if (!userData) {
+        userData = { username: user.email.split('@')[0], email: user.email, isAdmin: false };
+        await db.collection('users').doc(user.uid).set({
+          ...userData,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
       resolve({ user, userData });
     });
   });

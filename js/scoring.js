@@ -4,9 +4,8 @@
 
 /**
  * Рассчитывает очки пользователя на основе его прогнозов и реальных результатов.
- * @param {Object} userPrediction  — прогноз: { seriesId: { winner, games } }
- * @param {Object} results         — результаты: { seriesId: { winner, games, complete } }
- * @param {string} mode            — "full" | "round" (не влияет на расчёт)
+ * @param {Object} userPrediction  — прогноз: { seriesId: { winner, score } }
+ * @param {Object} results         — результаты: { seriesId: { winner, score, complete } }
  * @returns {{ total, breakdown }}
  */
 function calculateScore(userPrediction, results) {
@@ -33,8 +32,8 @@ function calculateScore(userPrediction, results) {
     let pts = 0;
     if (pred.winner === result.winner) {
       pts += SCORING.winnerPoints[round];
-      if (pred.games && pred.games === result.games) {
-        pts += SCORING.seriesLengthBonus;
+      if (pred.score && pred.score === result.score) {
+        pts += SCORING.seriesScoreBonus;
       }
     }
     breakdown.series[sid] = pts;
