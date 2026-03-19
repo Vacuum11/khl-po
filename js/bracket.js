@@ -8,7 +8,6 @@ let resultsData = {};   // actual results loaded from Firestore
 let currentUser = null;
 let currentUserData = null;
 let isLocked = false;   // true after admin locks full-bracket submissions
-let isSubmitted = false; // true once user has saved their prediction (one-time)
 
 // ── Series ID helpers ─────────────────────────────────────
 
@@ -72,7 +71,7 @@ function roundOfSeries(sid) {
 
 // ── Pick a winner for a series ────────────────────────────
 function pickWinner(sid, team) {
-  if (isLocked || isSubmitted) return;
+  if (isLocked) return;
   const result = resultForSeries(sid);
   if (result?.complete) return;        // series already finished, no editing
 
@@ -89,7 +88,7 @@ function pickWinner(sid, team) {
 }
 
 function pickScore(sid, score) {
-  if (isLocked || isSubmitted) return;
+  if (isLocked) return;
   const result = resultForSeries(sid);
   if (result?.complete) return;
   picks[sid] = { ...picks[sid], score };
@@ -133,16 +132,13 @@ async function savePrediction() {
   try {
     await db.collection('predictions').doc(currentUser.uid).set({
       fullBracket: picks,
-      fullBracketSubmitted: true,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       username: currentUserData?.username || ''
     }, { merge: true });
-    isSubmitted = true;
-    showToast('Прогноз сохранён! Изменения больше невозможны.', 'success');
-    const submittedBanner = document.getElementById('submitted-banner');
-    if (submittedBanner) submittedBanner.classList.remove('hidden');
-    btn.textContent = 'Прогноз отправлен';
-    renderBracket();
+    showToast('Прогноз сохранён! Можно редактировать до старта ПО.', 'success');
+    btn.disabled = false;
+    btn.textContent = 'Сохранить прогноз';
+    updateProgress();
   } catch (e) {
     showToast('Ошибка сохранения: ' + e.message, 'error');
     btn.disabled = false;
@@ -155,7 +151,6 @@ async function loadPrediction(uid) {
   const snap = await db.collection('predictions').doc(uid).get();
   if (snap.exists && snap.data().fullBracket) {
     picks = snap.data().fullBracket;
-    isSubmitted = snap.data().fullBracketSubmitted || false;
   }
 }
 
@@ -315,13 +310,6 @@ async function initBracket(user, userData) {
     if (banner) banner.classList.remove('hidden');
     const saveBtn = document.getElementById('save-btn');
     if (saveBtn) saveBtn.disabled = true;
-  }
-
-  if (isSubmitted) {
-    const submittedBanner = document.getElementById('submitted-banner');
-    if (submittedBanner) submittedBanner.classList.remove('hidden');
-    const saveBtn = document.getElementById('save-btn');
-    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Прогноз отправлен'; }
   }
 
   document.getElementById('save-btn')?.addEventListener('click', savePrediction);

@@ -30,16 +30,25 @@ function requireAuth(redirectTo = 'index.html') {
         window.location.href = redirectTo;
         return;
       }
-      let userData = await getUserData(user.uid);
-      // Если документ не создался при регистрации — создаём сейчас
-      if (!userData) {
-        userData = { username: 'Игрок', isAdmin: false };
-        await db.collection('users').doc(user.uid).set({
-          ...userData,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+      try {
+        const snap = await db.collection('users').doc(user.uid).get();
+        let userData;
+        if (snap.exists) {
+          userData = snap.data();
+        } else {
+          // Документ действительно не существует — создаём
+          userData = { username: 'Игрок', isAdmin: false };
+          await db.collection('users').doc(user.uid).set({
+            ...userData,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+        resolve({ user, userData });
+      } catch (e) {
+        // При ошибке чтения НЕ перезаписываем документ
+        console.error('requireAuth:', e);
+        resolve({ user, userData: { username: '…', isAdmin: false } });
       }
-      resolve({ user, userData });
     });
   });
 }
