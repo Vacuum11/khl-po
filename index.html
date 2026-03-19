@@ -65,8 +65,10 @@
 <script src="js/common.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  // Redirect to app if already logged in
-  redirectIfLoggedIn('app.html');
+  // Redirect to app if already logged in.
+  // Save the unsubscribe so we can cancel it before registration/login
+  // to prevent the listener from redirecting before Firestore write completes.
+  const cancelAutoRedirect = redirectIfLoggedIn('app.html');
 
   function switchTab(tab) {
     document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
@@ -77,6 +79,7 @@
 
   async function handleLogin(e) {
     e.preventDefault();
+    cancelAutoRedirect(); // stop the auto-redirect listener before signing in
     const btn = document.getElementById('login-btn');
     const err = document.getElementById('login-error');
     err.classList.remove('show');
@@ -98,6 +101,7 @@
 
   async function handleRegister(e) {
     e.preventDefault();
+    cancelAutoRedirect(); // stop the auto-redirect listener before creating account
     const btn = document.getElementById('reg-btn');
     const err = document.getElementById('reg-error');
     err.classList.remove('show');

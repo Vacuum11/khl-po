@@ -197,9 +197,12 @@ function renderBracket() {
     </div>
 
     <div class="final-center">
-      <div class="trophy-icon">🏆</div>
-      <div class="final-label">Кубок Гагарина</div>
-      ${renderSeriesCard('final', true)}
+      <div class="conf-title conf-title-spacer" aria-hidden="true"></div>
+      <div class="final-rounds">
+        <div class="trophy-icon">🏆</div>
+        <div class="final-label">Кубок Гагарина</div>
+        ${renderSeriesCard('final', true)}
+      </div>
     </div>
 
     <div class="conference-bracket east">

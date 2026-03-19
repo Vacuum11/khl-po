@@ -54,10 +54,16 @@ function requireAuth(redirectTo = 'index.html') {
 }
 
 // ── Redirect logged-in users away from auth page ─────────
+// Returns an unsubscribe function so callers can cancel before creating accounts
+// (prevents premature redirect that fires before Firestore write completes)
 function redirectIfLoggedIn(redirectTo = 'app.html') {
-  auth.onAuthStateChanged((user) => {
-    if (user) window.location.href = redirectTo;
+  const unsubscribe = auth.onAuthStateChanged((user) => {
+    if (user) {
+      unsubscribe();
+      window.location.href = redirectTo;
+    }
   });
+  return unsubscribe;
 }
 
 // ── Fetch user profile from Firestore ────────────────────
