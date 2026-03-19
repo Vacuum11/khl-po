@@ -75,12 +75,12 @@ function roundPickWinner(roundIdx, sid, team) {
   updateRoundProgress(roundIdx);
 }
 
-function roundPickGames(roundIdx, sid, games) {
+function roundPickScore(roundIdx, sid, score) {
   if (!isRoundOpen(roundIdx)) return;
   const result = roundResults[sid];
   if (result?.complete) return;
   if (!roundPicks[roundIdx]) roundPicks[roundIdx] = {};
-  roundPicks[roundIdx][sid] = { ...roundPicks[roundIdx][sid], games };
+  roundPicks[roundIdx][sid] = { ...roundPicks[roundIdx][sid], score };
   renderRoundSection(roundIdx);
 }
 
@@ -186,7 +186,7 @@ function buildRoundSection(roundIdx) {
       el.addEventListener('click', () => roundPickWinner(roundIdx, el.dataset.sid, el.dataset.team));
     });
     section.querySelectorAll('.games-btn').forEach(el => {
-      el.addEventListener('click', () => roundPickGames(roundIdx, el.dataset.sid, parseInt(el.dataset.games)));
+      el.addEventListener('click', () => roundPickScore(roundIdx, el.dataset.sid, el.dataset.score));
     });
     const saveBtn = section.querySelector(`#save-round-${roundIdx}`);
     saveBtn?.addEventListener('click', () => saveRoundPrediction(roundIdx));
@@ -214,12 +214,12 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
     </div>`;
   };
 
-  const gamesRow = [4,5,6,7].map(g => {
+  const gamesRow = ['4:0','4:1','4:2','4:3'].map(s => {
     let cls = 'games-btn';
-    if (complete && result.games === g) cls += ' result';
-    else if (!complete && pick.games === g) cls += ' selected';
+    if (complete && result.score === s) cls += ' result';
+    else if (!complete && pick.score === s) cls += ' selected';
     const dis = !open || complete ? ' disabled' : '';
-    return `<button class="${cls}" data-sid="${sid}" data-games="${g}"${dis}>${g}</button>`;
+    return `<button class="${cls}" data-sid="${sid}" data-score="${s}"${dis}>${s}</button>`;
   }).join('');
 
   return `

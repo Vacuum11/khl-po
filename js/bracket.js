@@ -87,11 +87,11 @@ function pickWinner(sid, team) {
   updateProgress();
 }
 
-function pickGames(sid, games) {
+function pickScore(sid, score) {
   if (isLocked) return;
   const result = resultForSeries(sid);
   if (result?.complete) return;
-  picks[sid] = { ...picks[sid], games };
+  picks[sid] = { ...picks[sid], score };
   renderSeriesGamesRow(sid);
 }
 
@@ -202,9 +202,7 @@ function renderBracket() {
     });
   });
   container.querySelectorAll('.games-btn').forEach(el => {
-    el.addEventListener('click', () => {
-      pickGames(el.dataset.sid, parseInt(el.dataset.games));
-    });
+    el.addEventListener('click', () => pickScore(el.dataset.sid, el.dataset.score));
   });
 }
 
@@ -259,13 +257,14 @@ function renderSeriesCard(sid, isFinal = false) {
   </div>`;
 }
 
+const SCORES = ['4:0','4:1','4:2','4:3'];
+
 function renderGamesRowHTML(sid, pick, result) {
-  const games = [4,5,6,7];
-  const btns = games.map(g => {
+  const btns = SCORES.map(s => {
     let cls = 'games-btn';
-    if (result?.complete && result.games === g) cls += ' result';
-    else if (!result?.complete && pick.games === g) cls += ' selected';
-    return `<button class="${cls}" data-sid="${sid}" data-games="${g}">${g}</button>`;
+    if (result?.complete && result.score === s) cls += ' result';
+    else if (!result?.complete && pick.score === s) cls += ' selected';
+    return `<button class="${cls}" data-sid="${sid}" data-score="${s}">${s}</button>`;
   }).join('');
   return `<div class="series-games-row">${btns}</div>`;
 }
@@ -275,14 +274,14 @@ function renderSeriesGamesRow(sid) {
   if (!row) return;
   const pick   = picks[sid] || {};
   const result = resultForSeries(sid);
-  row.innerHTML = [4,5,6,7].map(g => {
+  row.innerHTML = SCORES.map(s => {
     let cls = 'games-btn';
-    if (result?.complete && result.games === g) cls += ' result';
-    else if (!result?.complete && pick.games === g) cls += ' selected';
-    return `<button class="${cls}" data-sid="${sid}" data-games="${g}">${g}</button>`;
+    if (result?.complete && result.score === s) cls += ' result';
+    else if (!result?.complete && pick.score === s) cls += ' selected';
+    return `<button class="${cls}" data-sid="${sid}" data-score="${s}">${s}</button>`;
   }).join('');
   row.querySelectorAll('.games-btn').forEach(el => {
-    el.addEventListener('click', () => pickGames(el.dataset.sid, parseInt(el.dataset.games)));
+    el.addEventListener('click', () => pickScore(el.dataset.sid, el.dataset.score));
   });
 }
 

@@ -126,11 +126,11 @@ function renderSeriesList() {
       adminResults[sid].winner = sel.value || null;
     });
   });
-  container.querySelectorAll('.admin-games-sel').forEach(sel => {
+  container.querySelectorAll('.admin-score-sel').forEach(sel => {
     sel.addEventListener('change', () => {
       const sid = sel.dataset.sid;
       if (!adminResults[sid]) adminResults[sid] = {};
-      adminResults[sid].games = sel.value ? parseInt(sel.value) : null;
+      adminResults[sid].score = sel.value || null;
     });
   });
   container.querySelectorAll('.admin-complete-cb').forEach(cb => {
@@ -150,8 +150,8 @@ function buildAdminSeriesRow(s) {
     `<option value="${t}"${result.winner === t ? ' selected' : ''}>${t}</option>`
   ).join('');
 
-  const gamesOpts = [4,5,6,7].map(g =>
-    `<option value="${g}"${result.games === g ? ' selected' : ''}>${g} игр</option>`
+  const scoreOpts = ['4:0','4:1','4:2','4:3'].map(s =>
+    `<option value="${s}"${result.score === s ? ' selected' : ''}>${s}</option>`
   ).join('');
 
   const hasBothTeams = teams.length === 2;
@@ -165,9 +165,9 @@ function buildAdminSeriesRow(s) {
             <option value="">— Победитель —</option>
             ${teamOpts}
           </select>
-          <select class="admin-select admin-games-sel" data-sid="${sid}">
-            <option value="">— Игр —</option>
-            ${gamesOpts}
+          <select class="admin-select admin-score-sel" data-sid="${sid}">
+            <option value="">— Счёт —</option>
+            ${scoreOpts}
           </select>
           <label style="display:flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--text-2);cursor:pointer">
             <input type="checkbox" class="admin-complete-cb" data-sid="${sid}"
