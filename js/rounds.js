@@ -8,6 +8,7 @@ let currentRound            = 1;    // which round is currently active (1–4)
 let roundPredictionsLocked  = false; // locked by admin without advancing round
 let roundUser               = null;
 let roundUserData           = null;
+let roundsViewMode          = 'picks'; // 'picks' | 'reality'
 
 const ROUND_SERIES = [
   ['w1','w2','w3','w4','e1','e2','e3','e4'],  // round 1
@@ -162,7 +163,12 @@ function buildRoundSection(roundIdx) {
     ? '<div style="font-size:.78rem;color:var(--text-3);margin-bottom:.75rem">Перекрёстный формат: команды Запада встречаются с командами Востока</div>'
     : '';
 
-  const seriesCards = series.map(sid => buildRoundSeriesCard(sid, roundIdx, open, locked)).join('');
+  const isReality = roundsViewMode === 'reality';
+  const seriesCards = series.map(sid =>
+    isReality
+      ? buildRoundSeriesCardReality(sid, roundIdx)
+      : buildRoundSeriesCard(sid, roundIdx, open, locked)
+  ).join('');
 
   const section = document.createElement('div');
   section.className = 'round-section';
@@ -172,18 +178,18 @@ function buildRoundSection(roundIdx) {
     <div class="round-section-title">
       ${name}
       <span class="${badgeCls}">${badgeTxt}</span>
-      ${open ? `<span style="margin-left:auto;font-size:.8rem;color:var(--text-2)" id="progress-info-${roundIdx}">${done}/${series.length}</span>` : ''}
+      ${open && !isReality ? `<span style="margin-left:auto;font-size:.8rem;color:var(--text-2)" id="progress-info-${roundIdx}">${done}/${series.length}</span>` : ''}
     </div>
     ${crossNote}
-    ${future ? `<div class="alert alert-info">Этот раунд пока не открыт для прогнозов.</div>` : ''}
-    ${open ? `
+    ${future && !isReality ? `<div class="alert alert-info">Этот раунд пока не открыт для прогнозов.</div>` : ''}
+    ${open && !isReality ? `
       <div class="progress-bar" style="width:200px;margin-bottom:1rem">
         <div class="progress-fill" id="progress-${roundIdx}" style="width:${Math.round(done/series.length*100)}%"></div>
       </div>` : ''}
     <div class="series-grid">
       ${seriesCards}
     </div>
-    ${open ? `
+    ${open && !isReality ? `
       <div style="margin-top:1rem;display:flex;justify-content:flex-end">
         <button class="btn btn-primary" id="save-round-${roundIdx}"
           ${done < series.length ? 'disabled' : ''}>
@@ -192,7 +198,7 @@ function buildRoundSection(roundIdx) {
       </div>` : ''}
   `;
 
-  if (!future) {
+  if (!future && !isReality) {
     section.querySelectorAll('.series-team[data-sid]').forEach(el => {
       el.addEventListener('click', () => roundPickWinner(roundIdx, el.dataset.sid, el.dataset.team));
     });
@@ -266,6 +272,54 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
       ${ptsChip}
     </div>
   `;
+}
+
+// ── Reality card: read-only, shows only actual results ──────
+function buildRoundSeriesCardReality(sid, roundIdx) {
+  const [t1, t2] = teamsForRoundSeries(sid, roundIdx);
+  const result   = roundResults[sid];
+  const complete = result?.complete;
+  const REV      = {'4:0':'0:4','4:1':'1:4','4:2':'2:4','4:3':'3:4'};
+
+  const teamRow = (team) => {
+    if (!team || team === '?') {
+      return `<div class="series-team disabled"><span class="team-name" style="color:var(--text-3)">TBD</span></div>`;
+    }
+    const isWinner = complete && result.winner === team;
+    return `<div class="series-team disabled${isWinner ? ' winner' : ''}">
+      <div class="team-pick-indicator"></div>
+      <span class="team-name">${team}</span>
+    </div>`;
+  };
+
+  let scoreRow;
+  if (complete && result.score) {
+    const useReversed = result.winner === t2;
+    const score = useReversed ? (REV[result.score] || result.score) : result.score;
+    scoreRow = `<div class="series-games-row" style="justify-content:center;gap:.4rem">
+      <span style="font-size:.75rem;color:var(--text-2)">Счёт:</span>
+      <span style="font-weight:700;margin-left:.3rem;color:var(--gold)">${score}</span>
+    </div>`;
+  } else {
+    const hasTeams = t1 && t1 !== '?' && t2 && t2 !== '?';
+    scoreRow = `<div class="series-games-row" style="justify-content:center;color:var(--text-3);font-size:.75rem;font-style:italic">
+      ${hasTeams ? 'Серия не сыграна' : 'Пары не определены'}
+    </div>`;
+  }
+
+  return `<div class="series-card${complete ? ' complete' : ''}">
+    ${teamRow(t1)}
+    ${teamRow(t2)}
+    ${scoreRow}
+  </div>`;
+}
+
+// ── View toggle ─────────────────────────────────────────────
+function switchRoundsView(mode) {
+  roundsViewMode = mode;
+  document.getElementById('rvt-picks')?.classList.toggle('active', mode === 'picks');
+  document.getElementById('rvt-reality')?.classList.toggle('active', mode === 'reality');
+  renderAllRounds();
 }
 
 // ─────────────────────────────────────────────────────────
