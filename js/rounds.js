@@ -170,6 +170,14 @@ function buildRoundSection(roundIdx) {
       : buildRoundSeriesCard(sid, roundIdx, open, locked)
   ).join('');
 
+  // Banner when round is finished but user made zero picks
+  const hasResults = series.some(sid => roundResults[sid]?.complete);
+  const noPicksBanner = !isReality && locked && done === 0 && hasResults
+    ? `<div class="alert alert-info" style="margin-bottom:.75rem">
+        Вы не сделали ни одного прогноза на этот раунд — очки не начислены.
+       </div>`
+    : '';
+
   const section = document.createElement('div');
   section.className = 'round-section';
   section.id = `round-section-${roundIdx}`;
@@ -181,6 +189,7 @@ function buildRoundSection(roundIdx) {
       ${open && !isReality ? `<span style="margin-left:auto;font-size:.8rem;color:var(--text-2)" id="progress-info-${roundIdx}">${done}/${series.length}</span>` : ''}
     </div>
     ${crossNote}
+    ${noPicksBanner}
     ${future && !isReality ? `<div class="alert alert-info">Этот раунд пока не открыт для прогнозов.</div>` : ''}
     ${open && !isReality ? `
       <div class="progress-bar" style="width:200px;margin-bottom:1rem">
@@ -219,13 +228,17 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
   const complete = result?.complete;
   const editable = open && !complete;
 
+  // Did user save a pick for a team that didn't actually reach this series?
+  const teamsKnown = t1 && t1 !== '?' && t2 && t2 !== '?';
+  const pickedEliminated = teamsKnown && !!pick.winner && pick.winner !== t1 && pick.winner !== t2;
+
   const teamRow = (team) => {
     if (!team || team === '?') {
       return `<div class="series-team disabled"><span class="team-name" style="color:var(--text-3)">TBD</span></div>`;
     }
     const isSelected = !complete && pick.winner === team;
-    const isWinner   = complete && result.winner === team;
-    const isPicked   = complete && pick.winner === team;
+    const isWinner   = complete && !!pick.winner && !pickedEliminated && result.winner === team;
+    const isPicked   = complete && !pickedEliminated && pick.winner === team;
     const isWrong    = isPicked && !isWinner;
     const dis = !editable ? ' disabled' : '';
     const hint = isWrong ? '<span class="pick-hint">ваш выбор</span>' : '';
@@ -259,23 +272,36 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
   }).join('');
 
   let ptsChip = '';
-  if (complete && pick.winner) {
-    let pts = 0;
-    const rIdx = ['w1','w2','w3','w4','e1','e2','e3','e4'].includes(sid) ? 0
-      : ['c1','c2','c3','c4'].includes(sid) ? 1
-      : ['s1','s2'].includes(sid) ? 2 : 3;
-    if (pick.winner === result.winner) {
-      pts += SCORING.winnerPoints[rIdx];
-      if (pick.score && pick.score === result.score) pts += SCORING.seriesScoreBonus;
+  if (pickedEliminated) {
+    // User's saved pick was for a team that didn't reach this series
+    ptsChip = `<div class="series-pts pts-zero">Вы выбирали: ${pick.winner} (не дошёл)</div>`;
+  } else if (complete) {
+    if (pick.winner) {
+      let pts = 0;
+      const rIdx = ['w1','w2','w3','w4','e1','e2','e3','e4'].includes(sid) ? 0
+        : ['c1','c2','c3','c4'].includes(sid) ? 1
+        : ['s1','s2'].includes(sid) ? 2 : 3;
+      if (pick.winner === result.winner) {
+        pts += SCORING.winnerPoints[rIdx];
+        if (pick.score && pick.score === result.score) pts += SCORING.seriesScoreBonus;
+      }
+      ptsChip = `<div class="series-pts ${pts > 0 ? 'pts-pos' : 'pts-zero'}">${pts > 0 ? '+' + pts : '0'} очк.</div>`;
+    } else {
+      ptsChip = `<div class="series-pts pts-zero">Прогноз не сделан</div>`;
     }
-    ptsChip = `<div class="series-pts ${pts > 0 ? 'pts-pos' : 'pts-zero'}">${pts > 0 ? '+' + pts : '0'} очк.</div>`;
   }
+
+  // Live score row for in-progress series (not complete, but has liveScore set by admin)
+  const liveRow = !complete && result?.liveScore
+    ? `<div class="series-live-score">🟢 ${result.liveScore}</div>`
+    : '';
 
   return `
     <div class="series-card${complete?' complete':''}${!open?' locked':''}">
       ${teamRow(t1)}
       ${teamRow(t2)}
       <div class="series-games-row">${gamesRow}</div>
+      ${liveRow}
       ${ptsChip}
     </div>
   `;
