@@ -16,23 +16,43 @@ const ADMIN_ALL_SERIES = [
   { id:'e2',   name:'Восток 2 vs 7', round:1 },
   { id:'e3',   name:'Восток 3 vs 6', round:1 },
   { id:'e4',   name:'Восток 4 vs 5', round:1 },
-  { id:'c1',   name:'Кросс: W1–E4',  round:2 },
-  { id:'c2',   name:'Кросс: E2–W3',  round:2 },
-  { id:'c3',   name:'Кросс: E1–W4',  round:2 },
-  { id:'c4',   name:'Кросс: W2–E3',  round:2 },
+  { id:'c1',   name:'Сетка А — пара 1 (лучш.З vs худш.В)',  round:2 },
+  { id:'c2',   name:'Сетка А — пара 2 (2-й В vs 3-й З)',   round:2 },
+  { id:'c3',   name:'Сетка Б — пара 1 (лучш.В vs худш.З)', round:2 },
+  { id:'c4',   name:'Сетка Б — пара 2 (2-й З vs 3-й В)',   round:2 },
   { id:'s1',   name:'Полуфинал 1',   round:3 },
   { id:'s2',   name:'Полуфинал 2',   round:3 },
   { id:'final',name:'Финал КГ',      round:4 }
 ];
 
+// R2 (c1-c4) parents are resolved dynamically via getTeamOptions; only R3/Final here
 const ADMIN_TREE = {
-  'c1':['w1','e4'], 'c2':['e2','w3'],
-  'c3':['e1','w4'], 'c4':['w2','e3'],
   's1':['c1','c2'], 's2':['c3','c4'],
   'final':['s1','s2']
 };
 
 function getTeamOptions(sid) {
+  // R2: dynamic re-seeding based on actual R1 results
+  if (['c1','c2','c3','c4'].includes(sid)) {
+    const surv = (conf) => {
+      const r1s = conf === 'west' ? BRACKET.west.r1 : BRACKET.east.r1;
+      return r1s
+        .map(s => ({ seed: parseInt(s.id.slice(1)), winner: adminResults[s.id]?.winner }))
+        .filter(s => s.winner)
+        .sort((a, b) => a.seed - b.seed);
+    };
+    const w = surv('west');
+    const e = surv('east');
+    if (w.length < 4 || e.length < 4) return [];
+    const map = {
+      'c1': [w[0].winner, e[3].winner],
+      'c2': [e[1].winner, w[2].winner],
+      'c3': [e[0].winner, w[3].winner],
+      'c4': [w[1].winner, e[2].winner],
+    };
+    return map[sid] || [];
+  }
+  // R3/Final
   if (ADMIN_TREE[sid]) {
     const kids = ADMIN_TREE[sid];
     return kids.map(id => adminResults[id]?.winner || '?').filter(t => t !== '?');

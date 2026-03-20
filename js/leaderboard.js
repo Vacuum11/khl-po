@@ -152,6 +152,26 @@ function buildPicksView(userPicks, results) {
     if (r1W) return [r1W.home, r1W.away];
     const r1E = BRACKET.east.r1.find(s => s.id === sid);
     if (r1E) return [r1E.home, r1E.away];
+    // R2: dynamic re-seeding
+    if (['c1','c2','c3','c4'].includes(sid)) {
+      const getSurv = (conf) => {
+        const r1s = conf === 'west' ? BRACKET.west.r1 : BRACKET.east.r1;
+        return r1s
+          .map(s => ({ seed: parseInt(s.id.slice(1)), winner: results[s.id]?.winner || userPicks[s.id]?.winner }))
+          .filter(s => s.winner)
+          .sort((a, b) => a.seed - b.seed);
+      };
+      const w = getSurv('west');
+      const e = getSurv('east');
+      if (w.length < 4 || e.length < 4) return ['?','?'];
+      const map = {
+        'c1': [w[0].winner, e[3].winner],
+        'c2': [e[1].winner, w[2].winner],
+        'c3': [e[0].winner, w[3].winner],
+        'c4': [w[1].winner, e[2].winner],
+      };
+      return map[sid] || ['?','?'];
+    }
     const ch = TREE[sid];
     if (!ch) return ['?','?'];
     const gw = (csid) => results[csid]?.winner || userPicks[csid]?.winner || '?';
