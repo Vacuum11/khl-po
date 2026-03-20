@@ -216,12 +216,16 @@ function buildPicksView(userPicks, results) {
         return `<div class="${cls}"><div class="team-pick-indicator"></div><span class="team-name">${team}</span>${hint}</div>`;
       };
 
-      const useReversed = pick.winner && pick.winner === t2;
-      const scoreDisplay = pick.score
-        ? (useReversed ? (REV_SCORE[pick.score] || pick.score) : pick.score)
+      // scoreDisplay — from the perspective of the picked team (reversed if user picked t2)
+      const pickReversed   = pick.winner && pick.winner === t2;
+      const scoreDisplay   = pick.score
+        ? (pickReversed ? (REV_SCORE[pick.score] || pick.score) : pick.score)
         : '—';
-      const resultScore = result?.score
-        ? (useReversed ? (REV_SCORE[result.score] || result.score) : result.score)
+
+      // resultScore — from t1's perspective (reversed if actual winner is t2)
+      const resultReversed = complete && result?.winner === t2;
+      const resultScore    = result?.score
+        ? (resultReversed ? (REV_SCORE[result.score] || result.score) : result.score)
         : null;
 
       // Points chip
@@ -232,9 +236,9 @@ function buildPicksView(userPicks, results) {
         ptsChip = `<div class="series-pts ${p > 0 ? 'pts-pos' : 'pts-zero'}">${p > 0 ? '+' + p : '0'} очк.</div>`;
       }
 
-      // Score display: show actual result + user's pick if they differ
+      // Score display: show actual result + user's pick if they differ (compare displayed values)
       let scoreHtml;
-      if (complete && resultScore && pick.score && pick.score !== result.score) {
+      if (complete && resultScore && pick.score && scoreDisplay !== resultScore) {
         scoreHtml = `
           <span style="font-size:.8rem;color:var(--text-2)">Факт:</span>
           <span style="font-weight:700;margin-left:.3rem;color:var(--gold)">${resultScore}</span>

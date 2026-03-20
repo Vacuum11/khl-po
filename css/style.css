@@ -705,6 +705,26 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   letter-spacing: .04em;
 }
 
+/* Team logos */
+.team-logo {
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 2px;
+}
+.team-logo-fallback {
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  font-size: .55rem;
+  font-weight: 800;
+  color: var(--text-2);
+  background: var(--bg-2);
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+
 /* Series length picker */
 .series-games-row {
   display: flex;

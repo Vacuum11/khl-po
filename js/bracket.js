@@ -449,6 +449,7 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     return `<div class="${cls}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
       ${badge}
+      ${teamLogoHtml(team)}
       <span class="team-name">${team}</span>
       ${hint}
     </div>`;
@@ -496,6 +497,7 @@ function renderSeriesCardReality(sid, isFinal = false, noId = false) {
     return `<div class="series-team disabled${isWinner ? ' winner' : ''}">
       <div class="team-pick-indicator"></div>
       ${badge}
+      ${teamLogoHtml(team)}
       <span class="team-name">${team}</span>
     </div>`;
   };
@@ -540,11 +542,16 @@ const SCORES = ['4:0','4:1','4:2','4:3'];
 const SCORES_REVERSED = ['0:4','1:4','2:4','3:4'];
 
 function renderGamesRowHTML(sid, pick, result, t2) {
-  const useReversed = pick.winner && t2 && pick.winner === t2;
+  const useReversed   = pick.winner && t2 && pick.winner === t2;
   const displayScores = useReversed ? SCORES_REVERSED : SCORES;
+  // Result score converted to t1's display perspective (reversed if actual winner is t2)
+  const REV = Object.fromEntries(SCORES.map((s, i) => [s, SCORES_REVERSED[i]]));
+  const resultDisplayed = result?.complete && result.score
+    ? (result.winner === t2 ? (REV[result.score] || result.score) : result.score)
+    : null;
   const btns = SCORES.map((s, i) => {
     let cls = 'games-btn';
-    const isResult   = result?.complete && result.score === s;
+    const isResult   = result?.complete && resultDisplayed === displayScores[i];
     const isUserPick = result?.complete && pick.score === s;
     if (isResult) cls += ' result';
     if (isUserPick && !isResult) cls += ' user-pick';
@@ -560,11 +567,15 @@ function renderSeriesGamesRow(sid) {
   const pick   = picks[sid] || {};
   const result = resultForSeries(sid);
   const [, t2] = teamsForSeries(sid);
-  const useReversed = pick.winner && t2 && pick.winner === t2;
+  const useReversed   = pick.winner && t2 && pick.winner === t2;
   const displayScores = useReversed ? SCORES_REVERSED : SCORES;
+  const REV2 = Object.fromEntries(SCORES.map((s, i) => [s, SCORES_REVERSED[i]]));
+  const resultDisplayed2 = result?.complete && result.score
+    ? (result.winner === t2 ? (REV2[result.score] || result.score) : result.score)
+    : null;
   row.innerHTML = SCORES.map((s, i) => {
     let cls = 'games-btn';
-    const isResult   = result?.complete && result.score === s;
+    const isResult   = result?.complete && resultDisplayed2 === displayScores[i];
     const isUserPick = result?.complete && pick.score === s;
     if (isResult) cls += ' result';
     if (isUserPick && !isResult) cls += ' user-pick';
