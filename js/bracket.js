@@ -60,10 +60,13 @@ function roundOfSeries(sid) {
   return -1;
 }
 
-// Conference badge for mixed-conference display
-function confBadge(sid) {
-  if (sid.startsWith('w')) return '<span class="conf-badge west-badge">З</span>';
-  if (sid.startsWith('e')) return '<span class="conf-badge east-badge">В</span>';
+// Conference badge for a team — looks up team name in bracket config
+function teamConfBadge(teamName) {
+  if (!teamName || teamName === '?') return '';
+  if (BRACKET.west.r1.some(s => s.home === teamName || s.away === teamName))
+    return '<span class="conf-badge west-badge">З</span>';
+  if (BRACKET.east.r1.some(s => s.home === teamName || s.away === teamName))
+    return '<span class="conf-badge east-badge">В</span>';
   return '';
 }
 
@@ -282,12 +285,8 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
   const result    = resultForSeries(sid);
   const complete  = result?.complete;
   const locked    = isLocked;
-  const round     = roundOfSeries(sid);
 
-  // Conference badge for R1 series in cross-bracket view
-  const badge = round === 0 ? confBadge(sid) : '';
-
-  const teamHtml = (team, isT1) => {
+  const teamHtml = (team) => {
     if (!team || team === '?') {
       return `<div class="series-team disabled">
         <span class="team-name" style="color:var(--text-3)">TBD</span>
@@ -297,9 +296,10 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     const isWinner   = complete && result.winner === team;
     const isPicked   = complete && pick.winner === team;
     const cls = `series-team${locked || complete ? ' disabled':''}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}`;
+    const badge = teamConfBadge(team);
     return `<div class="${cls}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
-      ${isT1 && badge ? badge : ''}
+      ${badge}
       <span class="team-name">${team}</span>
     </div>`;
   };
@@ -310,8 +310,8 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
   const idAttr = noId ? '' : ` id="card-${sid}"`;
 
   return `<div class="${cardCls}"${idAttr}>
-    ${teamHtml(t1, true)}
-    ${teamHtml(t2, false)}
+    ${teamHtml(t1)}
+    ${teamHtml(t2)}
     ${gamesRow}
   </div>`;
 }
