@@ -239,11 +239,17 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
 
   const useReversed = pick.winner && t2 && pick.winner === t2;
   const scores = ['4:0','4:1','4:2','4:3'];
-  const displayScores = useReversed ? ['0:4','1:4','2:4','3:4'] : scores;
+  const scoresRev = ['0:4','1:4','2:4','3:4'];
+  const displayScores = useReversed ? scoresRev : scores;
+  const RREV = Object.fromEntries(scores.map((s, i) => [s, scoresRev[i]]));
+  // Result score from t1's display perspective (reversed if actual winner is t2)
+  const resultDisplayed = complete && result?.score
+    ? (result.winner === t2 ? (RREV[result.score] || result.score) : result.score)
+    : null;
 
   const gamesRow = scores.map((s, i) => {
     let cls = 'games-btn';
-    const isResult   = complete && result.score === s;
+    const isResult   = complete && resultDisplayed === displayScores[i];
     const isUserPick = complete && pick.score === s;
     if (isResult) cls += ' result';
     if (isUserPick && !isResult) cls += ' user-pick';
