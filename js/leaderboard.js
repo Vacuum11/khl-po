@@ -160,6 +160,7 @@ function buildPicksView(userPicks, results) {
           .map(s => {
             const winner = results[s.id]?.winner || userPicks[s.id]?.winner;
             if (!winner) return null;
+            if (winner !== s.home && winner !== s.away) return null;
             const seriesNum = parseInt(s.id.slice(1));
             const teamSeed = winner === s.home ? seriesNum : (9 - seriesNum);
             return { teamSeed, winner };

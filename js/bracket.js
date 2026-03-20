@@ -33,6 +33,10 @@ function getSurvivors(conf) {
     .map(s => {
       const winner = resultsData[s.id]?.winner || picks[s.id]?.winner || null;
       if (!winner) return null;
+      // Guard: winner must be one of the current teams in this series.
+      // Stale picks (saved before a bracket update) can reference teams that
+      // are no longer in this series — those should be ignored.
+      if (winner !== s.home && winner !== s.away) return null;
       const seriesNum = parseInt(s.id.slice(1));
       // home = higher seed (seriesNum), away = lower seed (9 - seriesNum)
       const teamSeed = winner === s.home ? seriesNum : (9 - seriesNum);

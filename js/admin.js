@@ -40,6 +40,7 @@ function getTeamOptions(sid) {
         .map(s => {
           const winner = adminResults[s.id]?.winner;
           if (!winner) return null;
+          if (winner !== s.home && winner !== s.away) return null;
           const seriesNum = parseInt(s.id.slice(1));
           const teamSeed = winner === s.home ? seriesNum : (9 - seriesNum);
           return { teamSeed, winner };
