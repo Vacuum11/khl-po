@@ -372,10 +372,48 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 /* ── BRACKET ────────────────────────────────────────── */
 .bracket-container {
   display: flex;
+  flex-direction: column;
   gap: 0;
-  align-items: stretch;        /* was flex-start — caused final to float to top */
   overflow-x: auto;
   padding-bottom: 1rem;
+}
+
+/* R1 section: west + east side by side */
+.r1-section {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0;
+}
+
+.r1-conference-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.r1-series-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Separator between R1 and cross-conference bracket */
+.cross-separator {
+  text-align: center;
+  padding: .75rem 0;
+  font-size: .75rem;
+  color: var(--text-3);
+  font-family: 'Oswald', sans-serif;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin: .5rem 0 .75rem;
+}
+
+/* R2–Final: the cross-conference bracket row */
+.cross-bracket-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
 }
 
 .conference-bracket {
