@@ -162,6 +162,18 @@ function teamConfBadge(teamName) {
   return '';
 }
 
+// ── Check if a team was eliminated in reality ───────────────
+// Returns true when any real completed series shows this team lost
+function isTeamEliminated(teamName) {
+  for (const sid of ALL_SERIES_ORDERED) {
+    const res = resultsData[sid];
+    if (!res?.complete) continue;
+    const [t1, t2] = teamsForSeriesResults(sid);
+    if ((t1 === teamName || t2 === teamName) && res.winner !== teamName) return true;
+  }
+  return false;
+}
+
 // ── Pick a winner ──────────────────────────────────────────
 function pickWinner(sid, team) {
   if (isLocked) return;
@@ -443,14 +455,19 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     const isWinner   = complete && !!pick.winner && result.winner === team;
     const isPicked   = complete && pick.winner === team;
     const isWrong    = isPicked && !isWinner;
-    const cls = `series-team${locked || complete ? ' disabled':''}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}`;
+    // In picks view, mark teams that were eliminated in reality before this round
+    const thisRound  = roundOfSeries(sid);
+    const eliminated = thisRound > 0 && !complete && isTeamEliminated(team);
+    const cls = `series-team${locked || complete ? ' disabled':''}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}${eliminated?' eliminated':''}`;
     const badge = teamConfBadge(team);
     const hint = isWrong ? '<span class="pick-hint">ваш выбор</span>' : '';
+    const elimBadge = eliminated ? '<span class="elim-badge">выбыл</span>' : '';
     return `<div class="${cls}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
       ${badge}
       ${teamLogoHtml(team)}
       <span class="team-name">${team}</span>
+      ${elimBadge}
       ${hint}
     </div>`;
   };

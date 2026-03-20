@@ -1252,6 +1252,19 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 .series-pts.pts-pos  { color: var(--gold); }
 .series-pts.pts-zero { color: var(--text-3); }
 
+/* Eliminated team in picks view (team was knocked out in an earlier round) */
+.series-team.eliminated {
+  opacity: 0.45;
+}
+.elim-badge {
+  font-size: .62rem;
+  font-weight: 700;
+  color: var(--danger, #e05);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-left: .25rem;
+}
+
 /* Live series score (shown for in-progress series in rounds view) */
 .series-live-score {
   text-align: center;

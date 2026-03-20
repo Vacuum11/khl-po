@@ -228,13 +228,17 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
   const complete = result?.complete;
   const editable = open && !complete;
 
+  // Did user save a pick for a team that didn't actually reach this series?
+  const teamsKnown = t1 && t1 !== '?' && t2 && t2 !== '?';
+  const pickedEliminated = teamsKnown && !!pick.winner && pick.winner !== t1 && pick.winner !== t2;
+
   const teamRow = (team) => {
     if (!team || team === '?') {
       return `<div class="series-team disabled"><span class="team-name" style="color:var(--text-3)">TBD</span></div>`;
     }
     const isSelected = !complete && pick.winner === team;
-    const isWinner   = complete && !!pick.winner && result.winner === team;
-    const isPicked   = complete && pick.winner === team;
+    const isWinner   = complete && !!pick.winner && !pickedEliminated && result.winner === team;
+    const isPicked   = complete && !pickedEliminated && pick.winner === team;
     const isWrong    = isPicked && !isWinner;
     const dis = !editable ? ' disabled' : '';
     const hint = isWrong ? '<span class="pick-hint">ваш выбор</span>' : '';
@@ -268,7 +272,10 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
   }).join('');
 
   let ptsChip = '';
-  if (complete) {
+  if (pickedEliminated) {
+    // User's saved pick was for a team that didn't reach this series
+    ptsChip = `<div class="series-pts pts-zero">Вы выбирали: ${pick.winner} (не дошёл)</div>`;
+  } else if (complete) {
     if (pick.winner) {
       let pts = 0;
       const rIdx = ['w1','w2','w3','w4','e1','e2','e3','e4'].includes(sid) ? 0
