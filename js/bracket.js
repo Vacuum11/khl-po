@@ -9,6 +9,7 @@ let resultsData = {};
 let currentUser = null;
 let currentUserData = null;
 let isLocked = false;
+let bracketViewMode = 'picks'; // 'picks' | 'reality'
 
 // ── Series tree (used for R3/Final only; R2 matchups are dynamic) ──
 const SERIES_TREE = {
@@ -46,35 +47,87 @@ function getSurvivors(conf) {
     .sort((a, b) => a.teamSeed - b.teamSeed);
 }
 
-// ── Teams for a series ─────────────────────────────────────
-function teamsForSeries(sid) {
-  // R1: teams come from bracket config
+// ── Picks-only survivors (for prediction tree) ─────────────
+function getSurvivorsPicks(conf) {
+  const r1Series = conf === 'west' ? BRACKET.west.r1 : BRACKET.east.r1;
+  return r1Series
+    .map(s => {
+      const winner = picks[s.id]?.winner || null;
+      if (!winner || (winner !== s.home && winner !== s.away)) return null;
+      const seriesNum = parseInt(s.id.slice(1));
+      const teamSeed = winner === s.home ? seriesNum : (9 - seriesNum);
+      return { teamSeed, winner };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.teamSeed - b.teamSeed);
+}
+
+// ── Results-only survivors (for reality tree) ───────────────
+function getSurvivorsResults(conf) {
+  const r1Series = conf === 'west' ? BRACKET.west.r1 : BRACKET.east.r1;
+  return r1Series
+    .map(s => {
+      const winner = resultsData[s.id]?.winner || null;
+      if (!winner || (winner !== s.home && winner !== s.away)) return null;
+      const seriesNum = parseInt(s.id.slice(1));
+      const teamSeed = winner === s.home ? seriesNum : (9 - seriesNum);
+      return { teamSeed, winner };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.teamSeed - b.teamSeed);
+}
+
+// ── Shared R2 map helper ────────────────────────────────────
+function r2Map(w, e) {
+  return {
+    'c1': [w[0].winner, e[3].winner],
+    'c2': [e[1].winner, w[2].winner],
+    'c3': [e[0].winner, w[3].winner],
+    'c4': [w[1].winner, e[2].winner],
+  };
+}
+
+// ── Teams for PREDICTION view (tree built from picks only) ──
+function teamsForSeriesPicks(sid) {
   const r1W = BRACKET.west.r1.find(s => s.id === sid);
   if (r1W) return [r1W.home, r1W.away];
   const r1E = BRACKET.east.r1.find(s => s.id === sid);
   if (r1E) return [r1E.home, r1E.away];
 
-  // R2: dynamic re-seeding — need all 4 R1 results/picks from each conf
   if (['c1','c2','c3','c4'].includes(sid)) {
-    const w = getSurvivors('west');
-    const e = getSurvivors('east');
+    const w = getSurvivorsPicks('west');
+    const e = getSurvivorsPicks('east');
     if (w.length < 4 || e.length < 4) return ['?', '?'];
-    // w[0]=best west … w[3]=worst west; same for e
-    const map = {
-      'c1': [w[0].winner, e[3].winner],  // best W  vs worst E
-      'c2': [e[1].winner, w[2].winner],  // 2nd E   vs 3rd W
-      'c3': [e[0].winner, w[3].winner],  // best E  vs worst W
-      'c4': [w[1].winner, e[2].winner],  // 2nd W   vs 3rd E
-    };
-    return map[sid] || ['?', '?'];
+    return r2Map(w, e)[sid] || ['?', '?'];
   }
 
-  // R3/Final: winner of each c-series
   const children = SERIES_TREE[sid];
   if (!children) return ['?', '?'];
-  const t1 = resultsData[children[0]]?.winner || picks[children[0]]?.winner || '?';
-  const t2 = resultsData[children[1]]?.winner || picks[children[1]]?.winner || '?';
-  return [t1, t2];
+  return [picks[children[0]]?.winner || '?', picks[children[1]]?.winner || '?'];
+}
+
+// ── Teams for REALITY view (tree built from results only) ───
+function teamsForSeriesResults(sid) {
+  const r1W = BRACKET.west.r1.find(s => s.id === sid);
+  if (r1W) return [r1W.home, r1W.away];
+  const r1E = BRACKET.east.r1.find(s => s.id === sid);
+  if (r1E) return [r1E.home, r1E.away];
+
+  if (['c1','c2','c3','c4'].includes(sid)) {
+    const w = getSurvivorsResults('west');
+    const e = getSurvivorsResults('east');
+    if (w.length < 4 || e.length < 4) return ['?', '?'];
+    return r2Map(w, e)[sid] || ['?', '?'];
+  }
+
+  const children = SERIES_TREE[sid];
+  if (!children) return ['?', '?'];
+  return [resultsData[children[0]]?.winner || '?', resultsData[children[1]]?.winner || '?'];
+}
+
+// ── Legacy mixed tree (kept for getSurvivors used in leaderboard) ──
+function teamsForSeries(sid) {
+  return teamsForSeriesPicks(sid); // prediction view is now the default
 }
 
 function resultForSeries(sid) {
@@ -244,11 +297,15 @@ function renderBracket() {
   const container = document.getElementById('bracket-container');
   if (!container) return;
 
+  const isReality = bracketViewMode === 'reality';
+  const card = (sid, isFinal = false) =>
+    isReality ? renderSeriesCardReality(sid, isFinal) : renderSeriesCard(sid, isFinal);
+
   const r1West = BRACKET.west.r1.map(s =>
-    `<div class="series-wrapper">${renderSeriesCard(s.id)}</div>`
+    `<div class="series-wrapper">${card(s.id)}</div>`
   ).join('');
   const r1East = BRACKET.east.r1.map(s =>
-    `<div class="series-wrapper">${renderSeriesCard(s.id)}</div>`
+    `<div class="series-wrapper">${card(s.id)}</div>`
   ).join('');
 
   container.innerHTML = `
@@ -285,7 +342,7 @@ function renderBracket() {
           <div class="final-card-area">
             <div class="trophy-icon">🏆</div>
             <div class="final-label">КУБОК ГАГАРИНА</div>
-            ${renderSeriesCard('final', true)}
+            ${card('final', true)}
           </div>
         </div>
       </div>
@@ -302,12 +359,15 @@ function renderBracket() {
     </div>
   `;
 
-  container.querySelectorAll('.series-team[data-sid]').forEach(el => {
-    el.addEventListener('click', () => pickWinner(el.dataset.sid, el.dataset.team));
-  });
-  container.querySelectorAll('.games-btn').forEach(el => {
-    el.addEventListener('click', () => pickScore(el.dataset.sid, el.dataset.score));
-  });
+  // Only attach pick listeners in prediction mode
+  if (!isReality) {
+    container.querySelectorAll('.series-team[data-sid]').forEach(el => {
+      el.addEventListener('click', () => pickWinner(el.dataset.sid, el.dataset.team));
+    });
+    container.querySelectorAll('.games-btn').forEach(el => {
+      el.addEventListener('click', () => pickScore(el.dataset.sid, el.dataset.score));
+    });
+  }
 
   renderBracketList();
 }
@@ -324,27 +384,35 @@ function renderBracketList() {
   const container = document.getElementById('bracket-list');
   if (!container) return;
 
+  const isReality = bracketViewMode === 'reality';
+  const card = (sid) =>
+    isReality ? renderSeriesCardReality(sid, sid === 'final', true)
+              : renderSeriesCard(sid, sid === 'final', true);
+
   container.innerHTML = BRACKET_ROUNDS_LIST.map(({ name, ids }) => {
-    const cards = ids.map(sid => renderSeriesCard(sid, sid === 'final', true)).join('');
+    const cards = ids.map(sid => card(sid)).join('');
     return `<div class="round-section">
       <div class="round-section-title">${name}</div>
       <div class="series-grid">${cards}</div>
     </div>`;
   }).join('');
 
-  container.querySelectorAll('.series-team[data-sid]').forEach(el => {
-    el.addEventListener('click', () => pickWinner(el.dataset.sid, el.dataset.team));
-  });
-  container.querySelectorAll('.games-btn').forEach(el => {
-    el.addEventListener('click', () => pickScore(el.dataset.sid, el.dataset.score));
-  });
+  if (!isReality) {
+    container.querySelectorAll('.series-team[data-sid]').forEach(el => {
+      el.addEventListener('click', () => pickWinner(el.dataset.sid, el.dataset.team));
+    });
+    container.querySelectorAll('.games-btn').forEach(el => {
+      el.addEventListener('click', () => pickScore(el.dataset.sid, el.dataset.score));
+    });
+  }
 }
 
 function renderRound(seriesIds, roundIdx) {
   const label = ROUND_NAMES[roundIdx];
+  const isReality = bracketViewMode === 'reality';
   const cardsHtml = seriesIds.map(sid => `
     <div class="series-wrapper">
-      ${renderSeriesCard(sid)}
+      ${isReality ? renderSeriesCardReality(sid) : renderSeriesCard(sid)}
     </div>
   `).join('');
 
@@ -359,7 +427,7 @@ function renderRound(seriesIds, roundIdx) {
 }
 
 function renderSeriesCard(sid, isFinal = false, noId = false) {
-  const [t1, t2]  = teamsForSeries(sid);
+  const [t1, t2]  = teamsForSeriesPicks(sid);
   const pick      = picks[sid] || {};
   const result    = resultForSeries(sid);
   const complete  = result?.complete;
@@ -408,6 +476,64 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     ${gamesRow}
     ${ptsChip}
   </div>`;
+}
+
+// ── Reality card: read-only, shows only actual results ──────
+function renderSeriesCardReality(sid, isFinal = false, noId = false) {
+  const [t1, t2] = teamsForSeriesResults(sid);
+  const result   = resultsData[sid] || null;
+  const complete = result?.complete;
+  const REV      = {'4:0':'0:4','4:1':'1:4','4:2':'2:4','4:3':'3:4'};
+
+  const teamHtml = (team) => {
+    if (!team || team === '?') {
+      return `<div class="series-team disabled">
+        <span class="team-name" style="color:var(--text-3)">TBD</span>
+      </div>`;
+    }
+    const isWinner = complete && result.winner === team;
+    const badge = teamConfBadge(team);
+    return `<div class="series-team disabled${isWinner ? ' winner' : ''}">
+      <div class="team-pick-indicator"></div>
+      ${badge}
+      <span class="team-name">${team}</span>
+    </div>`;
+  };
+
+  let scoreRow;
+  if (complete && result.score) {
+    const useReversed = result.winner === t2;
+    const score = useReversed ? (REV[result.score] || result.score) : result.score;
+    scoreRow = `<div class="series-games-row" style="justify-content:center;gap:.4rem">
+      <span style="font-size:.75rem;color:var(--text-2)">Счёт:</span>
+      <span style="font-weight:700;margin-left:.3rem;color:var(--gold)">${score}</span>
+    </div>`;
+  } else {
+    const hasTeams = t1 && t1 !== '?' && t2 && t2 !== '?';
+    scoreRow = `<div class="series-games-row" style="justify-content:center;color:var(--text-3);font-size:.75rem;font-style:italic">
+      ${hasTeams ? 'Серия не сыграна' : 'Пары не определены'}
+    </div>`;
+  }
+
+  const cardCls = `series-card${isFinal ? ' final-series-card' : ''}${complete ? ' complete' : ''}`;
+  const idAttr  = noId ? '' : ` id="real-card-${sid}"`;
+
+  return `<div class="${cardCls}"${idAttr}>
+    ${teamHtml(t1)}
+    ${teamHtml(t2)}
+    ${scoreRow}
+  </div>`;
+}
+
+// ── View toggle ─────────────────────────────────────────────
+function switchBracketView(mode) {
+  bracketViewMode = mode;
+  document.getElementById('bv-tab-picks')?.classList.toggle('active', mode === 'picks');
+  document.getElementById('bv-tab-reality')?.classList.toggle('active', mode === 'reality');
+  // Hide save bar in reality view (can't predict from there)
+  const saveBar = document.getElementById('save-bar');
+  if (saveBar) saveBar.classList.toggle('hidden', mode === 'reality');
+  renderBracket();
 }
 
 const SCORES = ['4:0','4:1','4:2','4:3'];

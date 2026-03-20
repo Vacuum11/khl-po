@@ -66,6 +66,15 @@
 
   <!-- FULL BRACKET VIEW -->
   <div id="view-full">
+  <!-- Bracket view sub-toggle: prediction vs reality -->
+  <div class="bv-tabs" id="bv-tabs">
+    <button class="bv-tab active" id="bv-tab-picks" onclick="switchBracketView('picks')">
+      🏒 Мой прогноз
+    </button>
+    <button class="bv-tab" id="bv-tab-reality" onclick="switchBracketView('reality')">
+      📊 Реальная сетка
+    </button>
+  </div>
     <!-- Desktop: horizontal bracket grid -->
     <div class="bracket-desktop-only">
       <div class="bracket-scroll-hint">
