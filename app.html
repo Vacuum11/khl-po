@@ -94,6 +94,14 @@
 
   <!-- ROUND-BY-ROUND VIEW -->
   <div id="view-round" class="hidden rounds-view">
+  <div class="bv-tabs">
+    <button class="bv-tab active" id="rvt-picks" onclick="switchRoundsView('picks')">
+      🏒 Мой прогноз
+    </button>
+    <button class="bv-tab" id="rvt-reality" onclick="switchRoundsView('reality')">
+      📊 Реальная сетка
+    </button>
+  </div>
     <div id="rounds-container">
       <div class="loading-overlay"><div class="spinner"></div> Загрузка…</div>
     </div>
