@@ -89,13 +89,23 @@ function roundOfSeries(sid) {
   return -1;
 }
 
-// Conference badge for a team — looks up team name in bracket config
+// Conference badge + seed number for a team — looks up team name in bracket config
 function teamConfBadge(teamName) {
   if (!teamName || teamName === '?') return '';
-  if (BRACKET.west.r1.some(s => s.home === teamName || s.away === teamName))
-    return '<span class="conf-badge west-badge">З</span>';
-  if (BRACKET.east.r1.some(s => s.home === teamName || s.away === teamName))
-    return '<span class="conf-badge east-badge">В</span>';
+  for (const s of BRACKET.west.r1) {
+    if (s.home === teamName || s.away === teamName) {
+      const n = parseInt(s.id.slice(1));
+      const seed = s.home === teamName ? n : (9 - n);
+      return `<span class="conf-badge west-badge">З${seed}</span>`;
+    }
+  }
+  for (const s of BRACKET.east.r1) {
+    if (s.home === teamName || s.away === teamName) {
+      const n = parseInt(s.id.slice(1));
+      const seed = s.home === teamName ? n : (9 - n);
+      return `<span class="conf-badge east-badge">В${seed}</span>`;
+    }
+  }
   return '';
 }
 

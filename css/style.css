@@ -780,10 +780,11 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 .conf-badge {
   font-size: .55rem;
   font-weight: 700;
-  padding: 1px 4px;
+  padding: 1px 5px;
   border-radius: 3px;
   flex-shrink: 0;
   line-height: 1.3;
+  letter-spacing: .02em;
 }
 .west-badge { background: rgba(59,130,246,.2); color: #93c5fd; }
 .east-badge { background: rgba(245,158,11,.2); color: #fcd34d; }
