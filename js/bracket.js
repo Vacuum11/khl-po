@@ -1,88 +1,82 @@
 // ============================================================
 // BRACKET — logic and rendering for full bracket prediction
+// Cross-conference format: R1 within conferences, R2+ cross
 // ============================================================
 
-// State: map of seriesId → { winner, games }
+// State
 let picks = {};
-let resultsData = {};   // actual results loaded from Firestore
+let resultsData = {};
 let currentUser = null;
 let currentUserData = null;
-let isLocked = false;   // true after admin locks full-bracket submissions
+let isLocked = false;
 
-// ── Series ID helpers ─────────────────────────────────────
-
-// Round 2 series derived from round 1 pairs
-// w1/w2 → w1w2, w3/w4 → w3w4, e1/e2 → e1e2, e3/e4 → e3e4
-// Round 3 (conf finals)
-// w1w2 vs w3w4 → wf    |   e1e2 vs e3e4 → ef
-// Round 4 (Gagarin Cup)
-// wf vs ef → final
-
+// ── Series tree (cross-conference from R2) ─────────────────
+// R2 pairings:
+//   c1: W-1st winner vs E-4th winner   c2: E-2nd winner vs W-3rd winner
+//   c3: E-1st winner vs W-4th winner   c4: W-2nd winner vs E-3rd winner
 const SERIES_TREE = {
-  // id → [child1, child2]  (children are the R1 series whose winners meet here)
-  'w1w2': ['w1','w2'],
-  'w3w4': ['w3','w4'],
-  'wf':   ['w1w2','w3w4'],
-  'e1e2': ['e1','e2'],
-  'e3e4': ['e3','e4'],
-  'ef':   ['e1e2','e3e4'],
-  'final':['wf','ef']
+  'c1': ['w1', 'e4'],
+  'c2': ['e2', 'w3'],
+  'c3': ['e1', 'w4'],
+  'c4': ['w2', 'e3'],
+  's1': ['c1', 'c2'],
+  's2': ['c3', 'c4'],
+  'final': ['s1', 's2']
 };
 
-// All series in bracket order
 const ALL_SERIES_ORDERED = [
-  'w1','w2','w3','w4',          // West R1
-  'e1','e2','e3','e4',          // East R1
-  'w1w2','w3w4',                // West R2
-  'e1e2','e3e4',                // East R2
-  'wf','ef',                    // Conf finals
-  'final'                       // Gagarin Cup
+  'w1','w2','w3','w4','e1','e2','e3','e4',
+  'c1','c2','c3','c4',
+  's1','s2',
+  'final'
 ];
 
-// ── Which teams can appear in a series (based on picks so far) ─
+// Visual bracket halves
+const HALF_A = { r1: ['w1','e4','e2','w3'], r2: ['c1','c2'], r3: ['s1'] };
+const HALF_B = { r1: ['e1','w4','w2','e3'], r2: ['c3','c4'], r3: ['s2'] };
+
+// ── Teams for a series ─────────────────────────────────────
 function teamsForSeries(sid) {
-  // R1: teams come from BRACKET config
   const r1W = BRACKET.west.r1.find(s => s.id === sid);
   if (r1W) return [r1W.home, r1W.away];
   const r1E = BRACKET.east.r1.find(s => s.id === sid);
   if (r1E) return [r1E.home, r1E.away];
-
-  // Later rounds: winners of child series
   const children = SERIES_TREE[sid];
   if (!children) return ['?','?'];
-
   const t1 = picks[children[0]]?.winner || '?';
   const t2 = picks[children[1]]?.winner || '?';
   return [t1, t2];
 }
 
-// ── Get real result for a series (from admin data) ────────
 function resultForSeries(sid) {
   return resultsData?.[sid] || null;
 }
 
 function roundOfSeries(sid) {
   if (['w1','w2','w3','w4','e1','e2','e3','e4'].includes(sid)) return 0;
-  if (['w1w2','w3w4','e1e2','e3e4'].includes(sid)) return 1;
-  if (['wf','ef'].includes(sid)) return 2;
+  if (['c1','c2','c3','c4'].includes(sid)) return 1;
+  if (['s1','s2'].includes(sid)) return 2;
   if (sid === 'final') return 3;
   return -1;
 }
 
-// ── Pick a winner for a series ────────────────────────────
+// Conference badge for mixed-conference display
+function confBadge(sid) {
+  if (sid.startsWith('w')) return '<span class="conf-badge west-badge">З</span>';
+  if (sid.startsWith('e')) return '<span class="conf-badge east-badge">В</span>';
+  return '';
+}
+
+// ── Pick a winner ──────────────────────────────────────────
 function pickWinner(sid, team) {
   if (isLocked) return;
   const result = resultForSeries(sid);
-  if (result?.complete) return;        // series already finished, no editing
-
+  if (result?.complete) return;
   const prev = picks[sid]?.winner;
   picks[sid] = { ...picks[sid], winner: team };
-
-  // Cascade: if this series' winner changes, invalidate downstream picks
   if (prev && prev !== team) {
     invalidateDownstream(sid, prev);
   }
-
   renderBracket();
   updateProgress();
 }
@@ -105,26 +99,24 @@ function invalidateDownstream(sid, oldWinner) {
   }
 }
 
-// ── Count completed picks ─────────────────────────────────
+// ── Progress ───────────────────────────────────────────────
 function countPicks() {
   return ALL_SERIES_ORDERED.filter(sid => picks[sid]?.winner).length;
 }
 
 function updateProgress() {
-  const total  = ALL_SERIES_ORDERED.length;   // 15
-  const done   = countPicks();
-  const pct    = Math.round((done / total) * 100);
-
-  const fill = document.getElementById('progress-fill');
-  const info = document.getElementById('save-info');
+  const total = ALL_SERIES_ORDERED.length;
+  const done  = countPicks();
+  const pct   = Math.round((done / total) * 100);
+  const fill  = document.getElementById('progress-fill');
+  const info  = document.getElementById('save-info');
   if (fill) fill.style.width = pct + '%';
   if (info) info.textContent = `Заполнено: ${done} / ${total} серий`;
-
   const saveBtn = document.getElementById('save-btn');
   if (saveBtn) saveBtn.disabled = done < total;
 }
 
-// ── Save to Firestore ─────────────────────────────────────
+// ── Save / Load ────────────────────────────────────────────
 async function savePrediction() {
   if (!currentUser) return;
   const btn = document.getElementById('save-btn');
@@ -147,7 +139,6 @@ async function savePrediction() {
   }
 }
 
-// ── Load user's previous prediction ──────────────────────
 async function loadPrediction(uid) {
   const snap = await db.collection('predictions').doc(uid).get();
   if (snap.exists && snap.data().fullBracket) {
@@ -155,7 +146,6 @@ async function loadPrediction(uid) {
   }
 }
 
-// ── Load results from Firestore ───────────────────────────
 async function loadResults() {
   const snap = await db.collection('settings').doc('results').get();
   if (snap.exists) {
@@ -168,17 +158,23 @@ async function loadResults() {
 // RENDERING
 // ─────────────────────────────────────────────────────────
 
-// ── Build bracket connector column (n pairs of top+bottom halves) ─
-function renderConnectors(pairCount) {
+function renderConnectors(pairCount, direction = 'ltr') {
   const pairs = Array.from({ length: pairCount }, () =>
     `<div class="connector-pair">
       <div class="connector-half top"></div>
       <div class="connector-half bottom"></div>
     </div>`
   ).join('');
-  return `<div class="bracket-connectors">
-    <div class="round-label round-label-spacer" aria-hidden="true"></div>
+  return `<div class="bracket-connectors ${direction}">
+    <div class="round-label round-label-spacer" aria-hidden="true">&nbsp;</div>
     <div class="connector-pairs-area">${pairs}</div>
+  </div>`;
+}
+
+function renderFinalConnector() {
+  return `<div class="bracket-connector-final">
+    <div class="round-label round-label-spacer" aria-hidden="true">&nbsp;</div>
+    <div class="connector-final-line"></div>
   </div>`;
 }
 
@@ -187,45 +183,45 @@ function renderBracket() {
   if (!container) return;
 
   container.innerHTML = `
-    <div class="conference-bracket west">
-      <div class="conf-title">ЗАПАДНАЯ КОНФЕРЕНЦИЯ</div>
+    <div class="conference-bracket half-a">
+      <div class="conf-title">СЕТКА А</div>
       <div class="bracket-rounds">
-        ${renderRound(['w1','w2','w3','w4'], 0)}
-        ${renderConnectors(2)}
-        ${renderRound(['w1w2','w3w4'], 1)}
-        ${renderConnectors(1)}
-        ${renderRound(['wf'], 2)}
-        <div class="bracket-connector-final"></div>
+        ${renderRound(HALF_A.r1, 0)}
+        ${renderConnectors(2, 'ltr')}
+        ${renderRound(HALF_A.r2, 1)}
+        ${renderConnectors(1, 'ltr')}
+        ${renderRound(HALF_A.r3, 2)}
+        ${renderFinalConnector()}
       </div>
     </div>
 
     <div class="final-center">
-      <div class="conf-title conf-title-spacer" aria-hidden="true"></div>
+      <div class="conf-title conf-title-spacer">&nbsp;</div>
       <div class="final-rounds">
-        <div class="trophy-icon">🏆</div>
-        <div class="final-label">Кубок Гагарина</div>
-        ${renderSeriesCard('final', true)}
+        <div class="round-label round-label-spacer" aria-hidden="true">&nbsp;</div>
+        <div class="final-card-area">
+          <div class="trophy-icon">🏆</div>
+          <div class="final-label">КУБОК ГАГАРИНА</div>
+          ${renderSeriesCard('final', true)}
+        </div>
       </div>
     </div>
 
-    <div class="conference-bracket east">
-      <div class="conf-title">ВОСТОЧНАЯ КОНФЕРЕНЦИЯ</div>
+    <div class="conference-bracket half-b">
+      <div class="conf-title">СЕТКА Б</div>
       <div class="bracket-rounds">
-        ${renderRound(['e1','e2','e3','e4'], 0)}
-        ${renderConnectors(2)}
-        ${renderRound(['e1e2','e3e4'], 1)}
-        ${renderConnectors(1)}
-        ${renderRound(['ef'], 2)}
-        <div class="bracket-connector-final"></div>
+        ${renderFinalConnector()}
+        ${renderRound(HALF_B.r3, 2)}
+        ${renderConnectors(1, 'rtl')}
+        ${renderRound(HALF_B.r2, 1)}
+        ${renderConnectors(2, 'rtl')}
+        ${renderRound(HALF_B.r1, 0)}
       </div>
     </div>
   `;
 
-  // Attach event listeners
   container.querySelectorAll('.series-team[data-sid]').forEach(el => {
-    el.addEventListener('click', () => {
-      pickWinner(el.dataset.sid, el.dataset.team);
-    });
+    el.addEventListener('click', () => pickWinner(el.dataset.sid, el.dataset.team));
   });
   container.querySelectorAll('.games-btn').forEach(el => {
     el.addEventListener('click', () => pickScore(el.dataset.sid, el.dataset.score));
@@ -234,11 +230,11 @@ function renderBracket() {
   renderBracketList();
 }
 
-// ── Mobile: vertical list view of the full bracket ───────
+// ── Mobile: vertical list view ─────────────────────────────
 const BRACKET_ROUNDS_LIST = [
-  { name: '1/8 финала',    ids: ['w1','w2','w3','w4','e1','e2','e3','e4'] },
-  { name: '1/4 финала',    ids: ['w1w2','w3w4','e1e2','e3e4'] },
-  { name: '1/2 финала',    ids: ['wf','ef'] },
+  { name: '1/8 финала', ids: ['w1','w2','w3','w4','e1','e2','e3','e4'] },
+  { name: '1/4 финала (перекрёстный)', ids: ['c1','c2','c3','c4'] },
+  { name: '1/2 финала', ids: ['s1','s2'] },
   { name: 'Кубок Гагарина', ids: ['final'] }
 ];
 
@@ -286,6 +282,10 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
   const result    = resultForSeries(sid);
   const complete  = result?.complete;
   const locked    = isLocked;
+  const round     = roundOfSeries(sid);
+
+  // Conference badge for R1 series in cross-bracket view
+  const badge = round === 0 ? confBadge(sid) : '';
 
   const teamHtml = (team, isT1) => {
     if (!team || team === '?') {
@@ -295,10 +295,11 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     }
     const isSelected = !complete && pick.winner === team;
     const isWinner   = complete && result.winner === team;
-    const isPicked   = complete && pick.winner === team;  // user's pick when result known
+    const isPicked   = complete && pick.winner === team;
     const cls = `series-team${locked || complete ? ' disabled':''}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}`;
     return `<div class="${cls}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
+      ${isT1 && badge ? badge : ''}
       <span class="team-name">${team}</span>
     </div>`;
   };
@@ -326,7 +327,7 @@ function renderGamesRowHTML(sid, pick, result, t2) {
     const isResult   = result?.complete && result.score === s;
     const isUserPick = result?.complete && pick.score === s;
     if (isResult) cls += ' result';
-    if (isUserPick && !isResult) cls += ' user-pick';  // wrong prediction, shown separately
+    if (isUserPick && !isResult) cls += ' user-pick';
     else if (!result?.complete && pick.score === s) cls += ' selected';
     return `<button class="${cls}" data-sid="${sid}" data-score="${s}">${displayScores[i]}</button>`;
   }).join('');

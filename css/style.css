@@ -411,9 +411,10 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   min-height: 540px;
 }
 
-/* West: R1 left → Final center; East: R1 right → Final center */
-.west .bracket-rounds { flex-direction: row; }
-.east .bracket-rounds { flex-direction: row-reverse; }
+/* Both halves use normal row direction.
+   Half-B renders its DOM in reverse order instead of CSS row-reverse. */
+.half-a .bracket-rounds { flex-direction: row; }
+.half-b .bracket-rounds { flex-direction: row; }
 
 .bracket-round {
   display: flex;
@@ -451,20 +452,20 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 }
 
 /* ── BRACKET CONNECTORS ──────────────────────────────── */
+/* Connector columns sit between two rounds.  They draw:
+   1. Vertical bar (::before) — centered horizontally in the column
+   2. Two INPUT arms (connector-half::after) — from the many-cards side to the bar
+   3. One OUTPUT arm (::after) — from the bar to the few-cards side
+   The .ltr / .rtl class controls which side is input vs output. */
+
 .bracket-connectors {
   display: flex;
   flex-direction: column;
-  width: 28px;
+  width: 30px;
   flex-shrink: 0;
   align-self: stretch;
 }
 
-/* Spacer occupies the round-label row so the pairs area aligns with card columns */
-.bracket-connectors .round-label-spacer {
-  flex-shrink: 0;
-}
-
-/* Pairs area must be flex so connector-pair flex:1 works */
 .connector-pairs-area {
   display: flex;
   flex-direction: column;
@@ -478,17 +479,26 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   flex-direction: column;
 }
 
-/* Vertical bar connecting the two card centers within a pair.
-   Cards use space-around → centers sit at 25% and 75% of the pair height.
-   Bar runs between them; offset 3px from the R2 side so it doesn't touch the block. */
+/* Vertical bar — always horizontally centered */
 .connector-pair::before {
   content: '';
   position: absolute;
-  right: 3px;        /* West: next round is to the right */
+  left: 50%;
   top: 25%;
   bottom: 25%;
   width: 1px;
   background: var(--border-glow);
+  transform: translateX(-0.5px);
+}
+
+/* Output arm — from center to the fewer-cards side */
+.connector-pair::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  height: 1px;
+  background: var(--border-glow);
+  transform: translateY(-0.5px);
 }
 
 .connector-half {
@@ -496,51 +506,57 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   position: relative;
 }
 
-/* Horizontal arm at the center of each half.
-   left: 4px — gap so the line doesn't touch the R1 card.
-   right: 3px — meets the vertical bar at right:3px. */
+/* Input arms — from the many-cards side to center */
 .connector-half::after {
   content: '';
   position: absolute;
   top: 50%;
-  left: 4px;
-  right: 3px;
   height: 1px;
   background: var(--border-glow);
   transform: translateY(-0.5px);
 }
 
-/* East (row-reverse): R2 is to the LEFT, R1 is to the RIGHT */
-.east .connector-pair::before {
-  right: auto;
-  left: 3px;
+/* LTR: input from left (many cards), output to right (fewer cards) */
+.bracket-connectors.ltr .connector-half::after {
+  left: 0;
+  right: 50%;
 }
-.east .connector-half::after {
-  left: 3px;
-  right: 4px;
+.bracket-connectors.ltr .connector-pair::after {
+  left: 50%;
+  right: 0;
 }
 
-/* Short horizontal line connecting R3 to the final card */
+/* RTL: input from right (many cards), output to left (fewer cards) */
+.bracket-connectors.rtl .connector-half::after {
+  left: 50%;
+  right: 0;
+}
+.bracket-connectors.rtl .connector-pair::after {
+  left: 0;
+  right: 50%;
+}
+
+/* ── Final connector (between semi and final card) ────── */
 .bracket-connector-final {
-  width: 28px;
+  display: flex;
+  flex-direction: column;
+  width: 30px;
   flex-shrink: 0;
   align-self: stretch;
+}
+.connector-final-line {
+  flex: 1;
   position: relative;
 }
-.bracket-connector-final::after {
+.connector-final-line::after {
   content: '';
   position: absolute;
   top: 50%;
-  left: 4px;
+  left: 0;
   right: 0;
   height: 1px;
   background: var(--border-glow);
   transform: translateY(-0.5px);
-}
-/* East: R3 is visually on the right (row-reverse), final card on the left */
-.east .bracket-connector-final::after {
-  left: 0;
-  right: 4px;
 }
 
 /* ── SERIES CARD ─────────────────────────────────────── */
@@ -642,20 +658,24 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 /* ── FINAL ──────────────────────────────────────────── */
 .final-center {
   display: flex;
-  flex-direction: column;  /* conf-title-spacer on top, final-rounds below */
-  padding: 0 1.5rem;
+  flex-direction: column;
+  padding: 0 .25rem;
   min-width: 210px;
 }
 
-/* Invisible spacer matching .conf-title height so bracket-rounds aligns with
-   the conference's bracket-rounds (which sit below conf-title) */
 .conf-title-spacer {
   visibility: hidden;
   flex-shrink: 0;
 }
 
-/* The actual content area — mirrors bracket-rounds, centers card inside */
+/* Structure: round-label-spacer + final-card-area — mirrors bracket-round */
 .final-rounds {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.final-card-area {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -663,18 +683,20 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   justify-content: center;
   position: relative;
 }
-/* Horizontal lines connecting R3 → final card, positioned within final-rounds */
-.final-rounds::before,
-.final-rounds::after {
+
+/* Horizontal lines bridging from connector-final to the card */
+.final-card-area::before,
+.final-card-area::after {
   content: '';
   position: absolute;
   top: 50%;
-  width: 1.5rem;
+  width: .25rem;
   height: 1px;
   background: var(--border-glow);
+  transform: translateY(-0.5px);
 }
-.final-rounds::before { left: -1.5rem; }
-.final-rounds::after  { right: -1.5rem; }
+.final-card-area::before { left: -.25rem; }
+.final-card-area::after  { right: -.25rem; }
 
 .final-label {
   font-family: 'Oswald', sans-serif;
@@ -711,9 +733,21 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   border-radius: var(--radius);
   overflow: hidden;
   width: 100%;
-  flex: none;                  /* prevent stretch to full bracket height */
+  flex: none;
   box-shadow: 0 0 30px var(--gold-glow);
 }
+
+/* Conference badge on R1 cards in mixed-conference halves */
+.conf-badge {
+  font-size: .55rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+.west-badge { background: rgba(59,130,246,.2); color: #93c5fd; }
+.east-badge { background: rgba(245,158,11,.2); color: #fcd34d; }
 
 /* ── ROUND-BY-ROUND VIEW ─────────────────────────────── */
 .rounds-view {
@@ -983,8 +1017,8 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 
 /* Tablet */
 @media (max-width: 1100px) {
-  .bracket-round { width: 160px; }
-  .final-center  { min-width: 170px; padding: 0 .5rem; }
+  .bracket-round { width: 155px; }
+  .final-center  { min-width: 170px; padding: 0 .15rem; }
 }
 
 /* Small tablet / large phone */
