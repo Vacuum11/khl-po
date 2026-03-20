@@ -69,7 +69,7 @@ function teamLogoHtml(team, size = 26) {
   if (!url) return '';
   const initials = team.replace(/[^А-ЯA-Z]/g, '').slice(0, 2) || team.slice(0, 2).toUpperCase();
   return `<img class="team-logo" src="${url}" width="${size}" height="${size}" alt="${team}"
-    onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" loading="lazy">
+    referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" loading="lazy">
   <span class="team-logo-fallback" style="display:none;width:${size}px;height:${size}px">${initials}</span>`;
 }
 
