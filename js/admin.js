@@ -5,6 +5,7 @@
 let adminResults = {};
 let adminCurrentRound = 1;
 let adminFullBracketLocked = false;
+let adminRoundPredictionsLocked = false;
 
 const ADMIN_ALL_SERIES = [
   { id:'w1',   name:'Запад 1',  round:1 },
@@ -52,9 +53,10 @@ function getTeamOptions(sid) {
 async function loadAdminData() {
   const snap = await db.collection('settings').doc('results').get();
   if (snap.exists) {
-    adminResults           = snap.data().series || {};
-    adminCurrentRound      = snap.data().currentRound || 1;
-    adminFullBracketLocked = snap.data().fullBracketLocked || false;
+    adminResults                = snap.data().series || {};
+    adminCurrentRound           = snap.data().currentRound || 1;
+    adminFullBracketLocked      = snap.data().fullBracketLocked || false;
+    adminRoundPredictionsLocked = snap.data().roundPredictionsLocked || false;
   }
 }
 
@@ -65,10 +67,11 @@ async function saveAdminData() {
   btn.innerHTML = '<span class="spinner"></span> Сохранение…';
   try {
     await db.collection('settings').doc('results').set({
-      series:             adminResults,
-      currentRound:       adminCurrentRound,
-      fullBracketLocked:  adminFullBracketLocked,
-      updatedAt:          firebase.firestore.FieldValue.serverTimestamp()
+      series:                   adminResults,
+      currentRound:             adminCurrentRound,
+      fullBracketLocked:        adminFullBracketLocked,
+      roundPredictionsLocked:   adminRoundPredictionsLocked,
+      updatedAt:                firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('Результаты сохранены!', 'success');
     renderAdminPanel();
@@ -95,8 +98,9 @@ function renderRoundControl() {
 
 function renderLockControl() {
   const cb = document.getElementById('lock-full-bracket');
-  if (!cb) return;
-  cb.checked = adminFullBracketLocked;
+  if (cb) cb.checked = adminFullBracketLocked;
+  const cb2 = document.getElementById('lock-round-predictions');
+  if (cb2) cb2.checked = adminRoundPredictionsLocked;
 }
 
 function renderSeriesList() {
@@ -194,6 +198,9 @@ async function initAdmin() {
 
   document.getElementById('lock-full-bracket')?.addEventListener('change', e => {
     adminFullBracketLocked = e.target.checked;
+  });
+  document.getElementById('lock-round-predictions')?.addEventListener('change', e => {
+    adminRoundPredictionsLocked = e.target.checked;
   });
 
   document.getElementById('save-admin-btn')?.addEventListener('click', saveAdminData);
