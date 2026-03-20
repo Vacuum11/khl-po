@@ -30,12 +30,16 @@ const ALL_SERIES_ORDERED = [
 function getSurvivors(conf) {
   const r1Series = conf === 'west' ? BRACKET.west.r1 : BRACKET.east.r1;
   return r1Series
-    .map(s => ({
-      seed: parseInt(s.id.slice(1)),
-      winner: resultsData[s.id]?.winner || picks[s.id]?.winner || null
-    }))
-    .filter(s => s.winner !== null)
-    .sort((a, b) => a.seed - b.seed);
+    .map(s => {
+      const winner = resultsData[s.id]?.winner || picks[s.id]?.winner || null;
+      if (!winner) return null;
+      const seriesNum = parseInt(s.id.slice(1));
+      // home = higher seed (seriesNum), away = lower seed (9 - seriesNum)
+      const teamSeed = winner === s.home ? seriesNum : (9 - seriesNum);
+      return { teamSeed, winner };
+    })
+    .filter(s => s !== null)
+    .sort((a, b) => a.teamSeed - b.teamSeed);
 }
 
 // ── Teams for a series ─────────────────────────────────────
