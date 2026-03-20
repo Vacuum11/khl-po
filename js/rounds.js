@@ -11,9 +11,9 @@ let roundUserData           = null;
 
 const ROUND_SERIES = [
   ['w1','w2','w3','w4','e1','e2','e3','e4'],  // round 1
-  ['w1w2','w3w4','e1e2','e3e4'],               // round 2
-  ['wf','ef'],                                  // round 3
-  ['final']                                     // round 4
+  ['c1','c2','c3','c4'],                       // round 2 (cross-conference)
+  ['s1','s2'],                                 // round 3
+  ['final']                                    // round 4
 ];
 
 // ── Load data ─────────────────────────────────────────────
@@ -43,10 +43,10 @@ function teamsForRoundSeries(sid, roundIdx) {
 
   // Later rounds: from real results if available, otherwise from prev round picks
   const tree = {
-    'w1w2': ['w1','w2'], 'w3w4': ['w3','w4'],
-    'e1e2': ['e1','e2'], 'e3e4': ['e3','e4'],
-    'wf':   ['w1w2','w3w4'], 'ef': ['e1e2','e3e4'],
-    'final':['wf','ef']
+    'c1': ['w1','e4'], 'c2': ['e2','w3'],
+    'c3': ['e1','w4'], 'c4': ['w2','e3'],
+    's1': ['c1','c2'], 's2': ['c3','c4'],
+    'final': ['s1','s2']
   };
   const children = tree[sid];
   if (!children) return ['?','?'];
@@ -58,7 +58,6 @@ function teamsForRoundSeries(sid, roundIdx) {
 }
 
 function isRoundLocked(roundIdx) {
-  // Rounds before current are locked; future rounds not yet open
   return roundIdx < currentRound - 1;
 }
 
@@ -158,6 +157,11 @@ function buildRoundSection(roundIdx) {
   if (future) { badgeCls += ' locked-badge'; badgeTxt = 'СКОРО'; }
   if (roundIdx === 3 && open) badgeCls += ' gold';
 
+  // Extra note for R2 cross-conference
+  const crossNote = roundIdx === 1
+    ? '<div style="font-size:.78rem;color:var(--text-3);margin-bottom:.75rem">Перекрёстный формат: команды Запада встречаются с командами Востока</div>'
+    : '';
+
   const seriesCards = series.map(sid => buildRoundSeriesCard(sid, roundIdx, open, locked)).join('');
 
   const section = document.createElement('div');
@@ -170,6 +174,7 @@ function buildRoundSection(roundIdx) {
       <span class="${badgeCls}">${badgeTxt}</span>
       ${open ? `<span style="margin-left:auto;font-size:.8rem;color:var(--text-2)" id="progress-info-${roundIdx}">${done}/${series.length}</span>` : ''}
     </div>
+    ${crossNote}
     ${future ? `<div class="alert alert-info">Этот раунд пока не открыт для прогнозов.</div>` : ''}
     ${open ? `
       <div class="progress-bar" style="width:200px;margin-bottom:1rem">
@@ -187,7 +192,6 @@ function buildRoundSection(roundIdx) {
       </div>` : ''}
   `;
 
-  // Wire up events
   if (!future) {
     section.querySelectorAll('.series-team[data-sid]').forEach(el => {
       el.addEventListener('click', () => roundPickWinner(roundIdx, el.dataset.sid, el.dataset.team));

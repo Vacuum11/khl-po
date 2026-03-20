@@ -135,15 +135,15 @@ function closePicksModal() {
 function buildPicksView(userPicks, results) {
   const ROUNDS = [
     { name: '1/8 финала', ids: ['w1','w2','w3','w4','e1','e2','e3','e4'] },
-    { name: '1/4 финала', ids: ['w1w2','w3w4','e1e2','e3e4'] },
-    { name: '1/2 финала', ids: ['wf','ef'] },
+    { name: '1/4 финала (перекрёстный)', ids: ['c1','c2','c3','c4'] },
+    { name: '1/2 финала', ids: ['s1','s2'] },
     { name: 'Финал КГ',   ids: ['final'] }
   ];
   const TREE = {
-    'w1w2':['w1','w2'],'w3w4':['w3','w4'],
-    'e1e2':['e1','e2'],'e3e4':['e3','e4'],
-    'wf':['w1w2','w3w4'],'ef':['e1e2','e3e4'],
-    'final':['wf','ef']
+    'c1':['w1','e4'], 'c2':['e2','w3'],
+    'c3':['e1','w4'], 'c4':['w2','e3'],
+    's1':['c1','c2'], 's2':['c3','c4'],
+    'final':['s1','s2']
   };
   const REV_SCORE = {'4:0':'0:4','4:1':'1:4','4:2':'2:4','4:3':'3:4'};
 
