@@ -37,9 +37,15 @@ function getTeamOptions(sid) {
     const surv = (conf) => {
       const r1s = conf === 'west' ? BRACKET.west.r1 : BRACKET.east.r1;
       return r1s
-        .map(s => ({ seed: parseInt(s.id.slice(1)), winner: adminResults[s.id]?.winner }))
-        .filter(s => s.winner)
-        .sort((a, b) => a.seed - b.seed);
+        .map(s => {
+          const winner = adminResults[s.id]?.winner;
+          if (!winner) return null;
+          const seriesNum = parseInt(s.id.slice(1));
+          const teamSeed = winner === s.home ? seriesNum : (9 - seriesNum);
+          return { teamSeed, winner };
+        })
+        .filter(s => s !== null)
+        .sort((a, b) => a.teamSeed - b.teamSeed);
     };
     const w = surv('west');
     const e = surv('east');
