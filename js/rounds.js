@@ -2,11 +2,12 @@
 // ROUNDS — round-by-round prediction logic
 // ============================================================
 
-let roundPicks     = {};   // { round: { sid: { winner, games } } }
-let roundResults   = {};   // actual results from admin
-let currentRound   = 1;    // which round is currently active (1–4)
-let roundUser      = null;
-let roundUserData  = null;
+let roundPicks              = {};   // { round: { sid: { winner, games } } }
+let roundResults            = {};   // actual results from admin
+let currentRound            = 1;    // which round is currently active (1–4)
+let roundPredictionsLocked  = false; // locked by admin without advancing round
+let roundUser               = null;
+let roundUserData           = null;
 
 const ROUND_SERIES = [
   ['w1','w2','w3','w4','e1','e2','e3','e4'],  // round 1
@@ -26,8 +27,9 @@ async function loadRoundPredictions(uid) {
 async function loadRoundSettings() {
   const snap = await db.collection('settings').doc('results').get();
   if (snap.exists) {
-    roundResults  = snap.data().series   || {};
-    currentRound  = snap.data().currentRound || 1;
+    roundResults             = snap.data().series   || {};
+    currentRound             = snap.data().currentRound || 1;
+    roundPredictionsLocked   = snap.data().roundPredictionsLocked || false;
   }
 }
 
@@ -61,7 +63,8 @@ function isRoundLocked(roundIdx) {
 }
 
 function isRoundOpen(roundIdx) {
-  return roundIdx === currentRound - 1;
+  if (roundIdx !== currentRound - 1) return false;
+  return !roundPredictionsLocked;
 }
 
 // ── Pick ──────────────────────────────────────────────────
@@ -148,6 +151,9 @@ function buildRoundSection(roundIdx) {
   let badgeCls  = 'round-badge';
   let badgeTxt  = '';
   if (open)   { badgeTxt = 'АКТИВЕН'; }
+  if (!open && roundIdx === currentRound - 1 && roundPredictionsLocked) {
+    badgeCls += ' locked-badge'; badgeTxt = 'ПРИЁМ ЗАКРЫТ';
+  }
   if (locked) { badgeCls += ' locked-badge'; badgeTxt = 'ЗАВЕРШЁН'; }
   if (future) { badgeCls += ' locked-badge'; badgeTxt = 'СКОРО'; }
   if (roundIdx === 3 && open) badgeCls += ' gold';
@@ -209,8 +215,9 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
     }
     const isSelected = !complete && pick.winner === team;
     const isWinner   = complete && result.winner === team;
+    const isPicked   = complete && pick.winner === team;
     const dis = !editable ? ' disabled' : '';
-    return `<div class="series-team${dis}${isSelected?' selected':''}${isWinner?' winner':''}" data-sid="${sid}" data-team="${team}">
+    return `<div class="series-team${dis}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
       <span class="team-name">${team}</span>
     </div>`;
@@ -222,7 +229,10 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
 
   const gamesRow = scores.map((s, i) => {
     let cls = 'games-btn';
-    if (complete && result.score === s) cls += ' result';
+    const isResult   = complete && result.score === s;
+    const isUserPick = complete && pick.score === s;
+    if (isResult) cls += ' result';
+    if (isUserPick && !isResult) cls += ' user-pick';
     else if (!complete && pick.score === s) cls += ' selected';
     const dis = !editable ? ' disabled' : '';
     return `<button class="${cls}" data-sid="${sid}" data-score="${s}"${dis}>${displayScores[i]}</button>`;

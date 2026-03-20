@@ -176,7 +176,10 @@ function renderConnectors(pairCount) {
       <div class="connector-half bottom"></div>
     </div>`
   ).join('');
-  return `<div class="bracket-connectors">${pairs}</div>`;
+  return `<div class="bracket-connectors">
+    <div class="round-label round-label-spacer" aria-hidden="true"></div>
+    <div class="connector-pairs-area">${pairs}</div>
+  </div>`;
 }
 
 function renderBracket() {
@@ -292,7 +295,8 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     }
     const isSelected = !complete && pick.winner === team;
     const isWinner   = complete && result.winner === team;
-    const cls = `series-team${locked || complete ? ' disabled':''}${isSelected?' selected':''}${isWinner?' winner':''}`;
+    const isPicked   = complete && pick.winner === team;  // user's pick when result known
+    const cls = `series-team${locked || complete ? ' disabled':''}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}`;
     return `<div class="${cls}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
       <span class="team-name">${team}</span>
@@ -319,7 +323,10 @@ function renderGamesRowHTML(sid, pick, result, t2) {
   const displayScores = useReversed ? SCORES_REVERSED : SCORES;
   const btns = SCORES.map((s, i) => {
     let cls = 'games-btn';
-    if (result?.complete && result.score === s) cls += ' result';
+    const isResult   = result?.complete && result.score === s;
+    const isUserPick = result?.complete && pick.score === s;
+    if (isResult) cls += ' result';
+    if (isUserPick && !isResult) cls += ' user-pick';  // wrong prediction, shown separately
     else if (!result?.complete && pick.score === s) cls += ' selected';
     return `<button class="${cls}" data-sid="${sid}" data-score="${s}">${displayScores[i]}</button>`;
   }).join('');
@@ -336,7 +343,10 @@ function renderSeriesGamesRow(sid) {
   const displayScores = useReversed ? SCORES_REVERSED : SCORES;
   row.innerHTML = SCORES.map((s, i) => {
     let cls = 'games-btn';
-    if (result?.complete && result.score === s) cls += ' result';
+    const isResult   = result?.complete && result.score === s;
+    const isUserPick = result?.complete && pick.score === s;
+    if (isResult) cls += ' result';
+    if (isUserPick && !isResult) cls += ' user-pick';
     else if (!result?.complete && pick.score === s) cls += ' selected';
     return `<button class="${cls}" data-sid="${sid}" data-score="${s}">${displayScores[i]}</button>`;
   }).join('');
