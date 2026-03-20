@@ -220,10 +220,13 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
     const isSelected = !complete && pick.winner === team;
     const isWinner   = complete && result.winner === team;
     const isPicked   = complete && pick.winner === team;
+    const isWrong    = isPicked && !isWinner;
     const dis = !editable ? ' disabled' : '';
+    const hint = isWrong ? '<span class="pick-hint">ваш выбор</span>' : '';
     return `<div class="series-team${dis}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
       <span class="team-name">${team}</span>
+      ${hint}
     </div>`;
   };
 
@@ -242,11 +245,25 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
     return `<button class="${cls}" data-sid="${sid}" data-score="${s}"${dis}>${displayScores[i]}</button>`;
   }).join('');
 
+  let ptsChip = '';
+  if (complete && pick.winner) {
+    let pts = 0;
+    const rIdx = ['w1','w2','w3','w4','e1','e2','e3','e4'].includes(sid) ? 0
+      : ['c1','c2','c3','c4'].includes(sid) ? 1
+      : ['s1','s2'].includes(sid) ? 2 : 3;
+    if (pick.winner === result.winner) {
+      pts += SCORING.winnerPoints[rIdx];
+      if (pick.score && pick.score === result.score) pts += SCORING.seriesScoreBonus;
+    }
+    ptsChip = `<div class="series-pts ${pts > 0 ? 'pts-pos' : 'pts-zero'}">${pts > 0 ? '+' + pts : '0'} очк.</div>`;
+  }
+
   return `
     <div class="series-card${complete?' complete':''}${!open?' locked':''}">
       ${teamRow(t1)}
       ${teamRow(t2)}
       <div class="series-games-row">${gamesRow}</div>
+      ${ptsChip}
     </div>
   `;
 }

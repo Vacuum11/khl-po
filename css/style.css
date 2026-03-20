@@ -665,6 +665,19 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 /* User's prediction dot shown when result is known */
 .series-team.user-pick .team-pick-indicator { opacity: 1; }
 /* winner.user-pick → gold (correct); user-pick without winner → red (wrong, default color) */
+/* Wrong pick: team name in red */
+.series-team.user-pick:not(.winner) .team-name { color: var(--red); }
+/* "ваш выбор" hint label shown on wrong-pick team */
+.pick-hint {
+  font-size: .58rem;
+  font-weight: 600;
+  color: var(--red);
+  opacity: .8;
+  margin-left: auto;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
 
 /* Series length picker */
 .series-games-row {
@@ -1182,11 +1195,48 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   margin-bottom: 1rem;
 }
 
+/* Points chip on completed series cards */
+.series-pts {
+  text-align: center;
+  font-size: .72rem;
+  font-weight: 700;
+  padding: .2rem .5rem .25rem;
+  letter-spacing: .03em;
+}
+.series-pts.pts-pos  { color: var(--gold); }
+.series-pts.pts-zero { color: var(--text-3); }
+
+/* Total score header in picks modal */
+.picks-total-header {
+  font-size: .85rem;
+  color: var(--text-2);
+  margin-bottom: 1.25rem;
+  padding: .5rem .75rem;
+  background: var(--bg-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.picks-total-header strong { color: var(--gold); font-size: 1.1rem; }
+
+/* Round subtotal shown inline with round name */
+.round-pts-line {
+  display: inline;
+  font-size: .72rem;
+  color: var(--text-3);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: .75rem;
+}
+.round-pts-line strong { color: var(--gold); font-weight: 700; }
+
 .picks-round {
   margin-bottom: 1.5rem;
 }
 
 .picks-round-name {
+  display: flex;
+  align-items: baseline;
   font-size: .75rem;
   font-weight: 600;
   text-transform: uppercase;

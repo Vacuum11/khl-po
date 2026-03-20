@@ -374,16 +374,30 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     const isSelected = !complete && pick.winner === team;
     const isWinner   = complete && result.winner === team;
     const isPicked   = complete && pick.winner === team;
+    const isWrong    = isPicked && !isWinner;
     const cls = `series-team${locked || complete ? ' disabled':''}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}`;
     const badge = teamConfBadge(team);
+    const hint = isWrong ? '<span class="pick-hint">ваш выбор</span>' : '';
     return `<div class="${cls}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
       ${badge}
       <span class="team-name">${team}</span>
+      ${hint}
     </div>`;
   };
 
   const gamesRow = renderGamesRowHTML(sid, pick, result, t2);
+
+  let ptsChip = '';
+  if (complete && pick.winner) {
+    let pts = 0;
+    const rIdx = roundOfSeries(sid);
+    if (pick.winner === result.winner) {
+      pts += SCORING.winnerPoints[rIdx];
+      if (pick.score && pick.score === result.score) pts += SCORING.seriesScoreBonus;
+    }
+    ptsChip = `<div class="series-pts ${pts > 0 ? 'pts-pos' : 'pts-zero'}">${pts > 0 ? '+' + pts : '0'} очк.</div>`;
+  }
 
   const cardCls = `series-card${isFinal?' final-series-card':''}${complete?' complete':''}${locked?' locked':''}`;
   const idAttr = noId ? '' : ` id="card-${sid}"`;
@@ -392,6 +406,7 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     ${teamHtml(t1)}
     ${teamHtml(t2)}
     ${gamesRow}
+    ${ptsChip}
   </div>`;
 }
 
