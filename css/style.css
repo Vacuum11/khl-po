@@ -408,6 +408,7 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   gap: 0;
   flex: 1;
   align-items: stretch;
+  justify-content: space-evenly;
   min-height: 540px;
 }
 

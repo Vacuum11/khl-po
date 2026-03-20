@@ -83,8 +83,86 @@ async function saveAdminData() {
 function renderAdminPanel() {
   renderRoundControl();
   renderLockControl();
+  renderTeamsEditor();
   renderSeriesList();
   renderParticipants();
+}
+
+// ── Teams editor ─────────────────────────────────────────
+function renderTeamsEditor() {
+  const container = document.getElementById('admin-teams-editor');
+  if (!container) return;
+
+  const allSeries = [
+    ...BRACKET.west.r1.map((s, i) => ({ ...s, conf: 'Запад', seed: i + 1 })),
+    ...BRACKET.east.r1.map((s, i) => ({ ...s, conf: 'Восток', seed: i + 1 }))
+  ];
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.75rem">
+      ${allSeries.map(s => `
+        <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem">
+          <div style="font-size:.72rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">
+            ${s.conf} ${s.seed} vs ${9 - s.seed}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.4rem">
+            <input class="admin-select teams-home-input" data-sid="${s.id}"
+              placeholder="Команда с преимуществом льда (${s.seed}-е место)"
+              value="${escapeHtmlAdmin(s.home)}"
+              style="width:100%;box-sizing:border-box;font-size:.85rem">
+            <input class="admin-select teams-away-input" data-sid="${s.id}"
+              placeholder="Соперник (${9 - s.seed}-е место)"
+              value="${escapeHtmlAdmin(s.away)}"
+              style="width:100%;box-sizing:border-box;font-size:.85rem">
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="margin-top:1rem;display:flex;gap:.75rem;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="resetTeamsEditor()">↺ Сбросить</button>
+      <button class="btn btn-gold btn-sm" onclick="saveTeams()">Сохранить команды</button>
+    </div>
+  `;
+}
+
+function resetTeamsEditor() {
+  renderTeamsEditor();
+}
+
+async function saveTeams() {
+  const homeInputs = document.querySelectorAll('.teams-home-input');
+  const awayInputs = document.querySelectorAll('.teams-away-input');
+
+  const westR1 = [];
+  const eastR1 = [];
+
+  homeInputs.forEach(inp => {
+    const sid = inp.dataset.sid;
+    const away = document.querySelector(`.teams-away-input[data-sid="${sid}"]`)?.value.trim() || '';
+    const home = inp.value.trim();
+    const entry = { id: sid, home, away };
+    if (sid.startsWith('w')) westR1.push(entry);
+    else eastR1.push(entry);
+  });
+
+  // Sort by id to preserve w1,w2,w3,w4 / e1,e2,e3,e4 order
+  westR1.sort((a, b) => a.id.localeCompare(b.id));
+  eastR1.sort((a, b) => a.id.localeCompare(b.id));
+
+  try {
+    await db.collection('settings').doc('bracket').set({
+      west: { r1: westR1 },
+      east: { r1: eastR1 },
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // Patch global BRACKET so the rest of the admin page is consistent
+    BRACKET.west.r1 = westR1;
+    BRACKET.east.r1 = eastR1;
+    showToast('Команды сохранены!', 'success');
+    renderSeriesList(); // refresh series list with new team names
+  } catch (e) {
+    showToast('Ошибка: ' + e.message, 'error');
+  }
 }
 
 function renderRoundControl() {
@@ -228,15 +306,19 @@ async function renderParticipants() {
       </div>
       <div class="participants-grid">
         ${rows.map(r => `
-          <div class="admin-series-item" style="padding:.65rem 1rem">
+          <div class="admin-series-item" style="padding:.65rem 1rem" id="prow-${r.uid}">
             <div style="flex:1;min-width:0">
-              <div style="font-weight:600;font-size:.9rem">${escapeHtmlAdmin(r.username)}${r.isAdmin ? ' <span style="color:var(--gold);font-size:.7rem">ADMIN</span>' : ''}</div>
+              <div style="font-weight:600;font-size:.9rem" id="pname-${r.uid}">${escapeHtmlAdmin(r.username)}${r.isAdmin ? ' <span style="color:var(--gold);font-size:.7rem">ADMIN</span>' : ''}</div>
               <div style="font-size:.75rem;color:var(--text-3)">${escapeHtmlAdmin(r.email)}</div>
             </div>
-            <div style="display:flex;gap:.5rem;flex-shrink:0">
+            <div style="display:flex;gap:.5rem;flex-shrink:0;align-items:center">
               ${r.hasFull  ? '<span class="complete-badge" style="font-size:.65rem">Полная сетка</span>' : ''}
               ${r.hasRound ? '<span class="complete-badge" style="font-size:.65rem">По раундам</span>' : ''}
               ${!r.hasFull && !r.hasRound ? '<span style="font-size:.75rem;color:var(--text-3)">Нет прогноза</span>' : ''}
+              <button class="btn btn-ghost btn-sm" style="font-size:.72rem;padding:.25rem .6rem"
+                onclick="startRenameParticipant('${r.uid}', ${JSON.stringify(escapeHtmlAdmin(r.username))})">
+                ✏ Имя
+              </button>
             </div>
           </div>
         `).join('')}
@@ -251,10 +333,64 @@ function escapeHtmlAdmin(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── Participant rename ────────────────────────────────────
+function startRenameParticipant(uid, currentName) {
+  const nameEl = document.getElementById(`pname-${uid}`);
+  if (!nameEl || nameEl.querySelector('input')) return; // already editing
+
+  const isAdmin = nameEl.innerHTML.includes('ADMIN');
+  const adminBadge = isAdmin ? ' <span style="color:var(--gold);font-size:.7rem">ADMIN</span>' : '';
+
+  nameEl.innerHTML = `
+    <div style="display:flex;align-items:center;gap:.4rem">
+      <input id="rename-input-${uid}" type="text" class="admin-select"
+        value="${currentName}"
+        style="width:140px;padding:.2rem .5rem;font-size:.85rem"
+        onkeydown="if(event.key==='Enter')saveRenameParticipant('${uid}');if(event.key==='Escape')cancelRenameParticipant('${uid}','${currentName}',${isAdmin})">
+      <button class="btn btn-gold btn-sm" style="font-size:.72rem;padding:.25rem .6rem"
+        onclick="saveRenameParticipant('${uid}')">✓</button>
+      <button class="btn btn-ghost btn-sm" style="font-size:.72rem;padding:.25rem .6rem"
+        onclick="cancelRenameParticipant('${uid}','${currentName}',${isAdmin})">✕</button>
+    </div>
+  `;
+  document.getElementById(`rename-input-${uid}`)?.focus();
+}
+
+function cancelRenameParticipant(uid, name, isAdmin) {
+  const nameEl = document.getElementById(`pname-${uid}`);
+  if (!nameEl) return;
+  const adminBadge = isAdmin ? ' <span style="color:var(--gold);font-size:.7rem">ADMIN</span>' : '';
+  nameEl.innerHTML = escapeHtmlAdmin(name) + adminBadge;
+}
+
+async function saveRenameParticipant(uid) {
+  const input = document.getElementById(`rename-input-${uid}`);
+  if (!input) return;
+  const newName = input.value.trim();
+  if (!newName) { showToast('Имя не может быть пустым', 'error'); return; }
+
+  input.disabled = true;
+  try {
+    await db.collection('users').doc(uid).update({ username: newName });
+    const nameEl = document.getElementById(`pname-${uid}`);
+    if (nameEl) {
+      const isAdmin = nameEl.dataset.admin === 'true' ||
+        document.getElementById(`prow-${uid}`)?.querySelector('.admin-series-item')?.innerHTML?.includes('ADMIN');
+      nameEl.innerHTML = escapeHtmlAdmin(newName);
+    }
+    showToast('Имя изменено', 'success');
+    renderParticipants(); // reload list
+  } catch (e) {
+    showToast('Ошибка: ' + e.message, 'error');
+    input.disabled = false;
+  }
+}
+
 // ─────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────
 async function initAdmin() {
+  await loadBracketOverride();
   await loadAdminData();
   renderAdminPanel();
 

@@ -33,3 +33,17 @@ function setActiveNavLink() {
 }
 
 document.addEventListener('DOMContentLoaded', setActiveNavLink);
+
+// ── Bracket override from Firestore ──────────────────────
+// Admin can edit team names in the DB; this patches the global BRACKET constant.
+async function loadBracketOverride() {
+  try {
+    const snap = await db.collection('settings').doc('bracket').get();
+    if (!snap.exists) return;
+    const data = snap.data();
+    if (data.west?.r1?.length) BRACKET.west.r1 = data.west.r1;
+    if (data.east?.r1?.length) BRACKET.east.r1 = data.east.r1;
+  } catch (e) {
+    console.warn('loadBracketOverride:', e);
+  }
+}

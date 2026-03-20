@@ -97,11 +97,13 @@
 <script>
   let lbMode = 'full';
 
-  requireAuth().then(({ user, userData }) => {
-    window._myUid = user.uid;
-    renderUserChip(userData);
-    applyAdminUI(userData);
-    subscribeLeaderboard(lbMode);
+  loadBracketOverride().then(() => {
+    requireAuth().then(({ user, userData }) => {
+      window._myUid = user.uid;
+      renderUserChip(userData);
+      applyAdminUI(userData);
+      subscribeLeaderboard(lbMode);
+    });
   });
 
   function switchLbMode(mode) {
