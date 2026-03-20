@@ -33,6 +33,10 @@ function getSurvivors(conf) {
     .map(s => {
       const winner = resultsData[s.id]?.winner || picks[s.id]?.winner || null;
       if (!winner) return null;
+      // Guard: winner must be one of the current teams in this series.
+      // Stale picks (saved before a bracket update) can reference teams that
+      // are no longer in this series — those should be ignored.
+      if (winner !== s.home && winner !== s.away) return null;
       const seriesNum = parseInt(s.id.slice(1));
       // home = higher seed (seriesNum), away = lower seed (9 - seriesNum)
       const teamSeed = winner === s.home ? seriesNum : (9 - seriesNum);
@@ -85,13 +89,23 @@ function roundOfSeries(sid) {
   return -1;
 }
 
-// Conference badge for a team — looks up team name in bracket config
+// Conference badge + seed number for a team — looks up team name in bracket config
 function teamConfBadge(teamName) {
   if (!teamName || teamName === '?') return '';
-  if (BRACKET.west.r1.some(s => s.home === teamName || s.away === teamName))
-    return '<span class="conf-badge west-badge">З</span>';
-  if (BRACKET.east.r1.some(s => s.home === teamName || s.away === teamName))
-    return '<span class="conf-badge east-badge">В</span>';
+  for (const s of BRACKET.west.r1) {
+    if (s.home === teamName || s.away === teamName) {
+      const n = parseInt(s.id.slice(1));
+      const seed = s.home === teamName ? n : (9 - n);
+      return `<span class="conf-badge west-badge">З${seed}</span>`;
+    }
+  }
+  for (const s of BRACKET.east.r1) {
+    if (s.home === teamName || s.away === teamName) {
+      const n = parseInt(s.id.slice(1));
+      const seed = s.home === teamName ? n : (9 - n);
+      return `<span class="conf-badge east-badge">В${seed}</span>`;
+    }
+  }
   return '';
 }
 
@@ -360,16 +374,30 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     const isSelected = !complete && pick.winner === team;
     const isWinner   = complete && result.winner === team;
     const isPicked   = complete && pick.winner === team;
+    const isWrong    = isPicked && !isWinner;
     const cls = `series-team${locked || complete ? ' disabled':''}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}`;
     const badge = teamConfBadge(team);
+    const hint = isWrong ? '<span class="pick-hint">ваш выбор</span>' : '';
     return `<div class="${cls}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
       ${badge}
       <span class="team-name">${team}</span>
+      ${hint}
     </div>`;
   };
 
   const gamesRow = renderGamesRowHTML(sid, pick, result, t2);
+
+  let ptsChip = '';
+  if (complete && pick.winner) {
+    let pts = 0;
+    const rIdx = roundOfSeries(sid);
+    if (pick.winner === result.winner) {
+      pts += SCORING.winnerPoints[rIdx];
+      if (pick.score && pick.score === result.score) pts += SCORING.seriesScoreBonus;
+    }
+    ptsChip = `<div class="series-pts ${pts > 0 ? 'pts-pos' : 'pts-zero'}">${pts > 0 ? '+' + pts : '0'} очк.</div>`;
+  }
 
   const cardCls = `series-card${isFinal?' final-series-card':''}${complete?' complete':''}${locked?' locked':''}`;
   const idAttr = noId ? '' : ` id="card-${sid}"`;
@@ -378,6 +406,7 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     ${teamHtml(t1)}
     ${teamHtml(t2)}
     ${gamesRow}
+    ${ptsChip}
   </div>`;
 }
 

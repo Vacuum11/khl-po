@@ -21,21 +21,21 @@ async function loadLeaderboard(mode = 'full') {
       return;
     }
 
-    // Calculate scores
+    // Calculate scores — each mode is a separate competition
     const rows = [];
     predsSnap.forEach(doc => {
       const data = doc.data();
-      let predMap = {};
+      let predMap = null;
       if (mode === 'full' && data.fullBracket) {
         predMap = data.fullBracket;
       } else if (mode === 'round' && data.roundPredictions) {
-        // merge all round picks into one flat map
+        predMap = {};
         for (const rPicks of Object.values(data.roundPredictions)) {
           Object.assign(predMap, rPicks);
         }
-      } else if (data.fullBracket) {
-        predMap = data.fullBracket;
       }
+      // Skip users who haven't submitted predictions for this competition mode
+      if (!predMap) return;
 
       const { total, breakdown } = calculateScore(predMap, resultsData);
       rows.push({
@@ -147,12 +147,14 @@ function buildPicksView(userPicks, results) {
   };
   const REV_SCORE = {'4:0':'0:4','4:1':'1:4','4:2':'2:4','4:3':'3:4'};
 
+  // Pre-calculate full score breakdown for this user
+  const { total, breakdown } = calculateScore(userPicks, results);
+
   function getTeams(sid) {
     const r1W = BRACKET.west.r1.find(s => s.id === sid);
     if (r1W) return [r1W.home, r1W.away];
     const r1E = BRACKET.east.r1.find(s => s.id === sid);
     if (r1E) return [r1E.home, r1E.away];
-    // R2: dynamic re-seeding
     if (['c1','c2','c3','c4'].includes(sid)) {
       const getSurv = (conf) => {
         const r1s = conf === 'west' ? BRACKET.west.r1 : BRACKET.east.r1;
@@ -160,6 +162,7 @@ function buildPicksView(userPicks, results) {
           .map(s => {
             const winner = results[s.id]?.winner || userPicks[s.id]?.winner;
             if (!winner) return null;
+            if (winner !== s.home && winner !== s.away) return null;
             const seriesNum = parseInt(s.id.slice(1));
             const teamSeed = winner === s.home ? seriesNum : (9 - seriesNum);
             return { teamSeed, winner };
@@ -184,12 +187,15 @@ function buildPicksView(userPicks, results) {
     return [gw(ch[0]), gw(ch[1])];
   }
 
-  let html = '';
-  for (const { name, ids } of ROUNDS) {
+  let html = `<div class="picks-total-header">Итого: <strong>${total}</strong> очков</div>`;
+
+  ROUNDS.forEach(({ name, ids }, roundIdx) => {
+    const roundPts = breakdown.byRound[roundIdx] || 0;
+
     const cards = ids.map(sid => {
       const [t1, t2] = getTeams(sid);
-      const pick   = userPicks[sid] || {};
-      const result = results[sid];
+      const pick     = userPicks[sid] || {};
+      const result   = results[sid];
       const complete = result?.complete;
 
       if (!pick.winner && !complete) {
@@ -200,39 +206,70 @@ function buildPicksView(userPicks, results) {
       }
 
       const teamHtml = (team) => {
-        const isPicked = pick.winner === team;
-        const isWinner = complete && result.winner === team;
-        const cls = `series-team disabled${isPicked?' selected':''}${isWinner?' winner':''}`;
-        return `<div class="${cls}"><div class="team-pick-indicator"></div><span class="team-name">${team}</span></div>`;
+        const isPicked  = pick.winner === team;
+        const isWinner  = complete && result.winner === team;
+        const isWrong   = isPicked && complete && !isWinner;
+        // Use user-pick class (not selected) when result is known
+        const pickedCls = isPicked ? (complete ? ' user-pick' : ' selected') : '';
+        const cls = `series-team disabled${pickedCls}${isWinner ? ' winner' : ''}`;
+        const hint = isWrong ? '<span class="pick-hint">ваш выбор</span>' : '';
+        return `<div class="${cls}"><div class="team-pick-indicator"></div><span class="team-name">${team}</span>${hint}</div>`;
       };
 
       const useReversed = pick.winner && pick.winner === t2;
       const scoreDisplay = pick.score
         ? (useReversed ? (REV_SCORE[pick.score] || pick.score) : pick.score)
         : '—';
+      const resultScore = result?.score
+        ? (useReversed ? (REV_SCORE[result.score] || result.score) : result.score)
+        : null;
 
-      let statusIcon = '';
+      // Points chip
+      const pts = breakdown.series[sid] ?? null;
+      let ptsChip = '';
       if (complete && pick.winner) {
-        if (pick.winner === result.winner && pick.score === result.score) statusIcon = ' ✅';
-        else if (pick.winner === result.winner) statusIcon = ' ☑️';
-        else statusIcon = ' ❌';
+        const p = pts ?? 0;
+        ptsChip = `<div class="series-pts ${p > 0 ? 'pts-pos' : 'pts-zero'}">${p > 0 ? '+' + p : '0'} очк.</div>`;
+      }
+
+      // Score display: show actual result + user's pick if they differ
+      let scoreHtml;
+      if (complete && resultScore && pick.score && pick.score !== result.score) {
+        scoreHtml = `
+          <span style="font-size:.8rem;color:var(--text-2)">Факт:</span>
+          <span style="font-weight:700;margin-left:.3rem;color:var(--gold)">${resultScore}</span>
+          <span style="font-size:.8rem;color:var(--text-3);margin-left:.6rem">прогноз:</span>
+          <span style="font-weight:600;margin-left:.3rem;color:var(--red);text-decoration:line-through">${scoreDisplay}</span>`;
+      } else if (complete && resultScore) {
+        scoreHtml = `
+          <span style="font-size:.8rem;color:var(--text-2)">Счёт:</span>
+          <span style="font-weight:700;margin-left:.35rem;color:var(--gold)">${resultScore}</span>`;
+      } else {
+        scoreHtml = `
+          <span style="font-size:.8rem;color:var(--text-2)">Счёт:</span>
+          <span style="font-weight:600;margin-left:.35rem">${scoreDisplay}</span>`;
       }
 
       return `<div class="series-card${complete?' complete':''}">
         ${teamHtml(t1 || 'TBD')}
         ${teamHtml(t2 || 'TBD')}
-        <div class="series-games-row" style="justify-content:center">
-          <span style="font-size:.8rem;color:var(--text-2)">Счёт:</span>
-          <span style="font-weight:600;margin-left:.35rem">${scoreDisplay}${statusIcon}</span>
-        </div>
+        <div class="series-games-row" style="justify-content:center">${scoreHtml}</div>
+        ${ptsChip}
       </div>`;
     }).join('');
 
+    // Round subtotal — only show if at least one series in this round is complete
+    const hasCompleted = ids.some(sid => results[sid]?.complete);
+    const roundTotal = hasCompleted
+      ? `<div class="round-pts-line">Раунд: <strong>${roundPts} очк.</strong></div>`
+      : '';
+
     html += `<div class="picks-round">
-      <div class="picks-round-name">${name}</div>
+      <div class="picks-round-name">${name}${roundTotal}</div>
       <div class="series-grid">${cards}</div>
     </div>`;
-  }
+  });
+
   return html;
 }
 
