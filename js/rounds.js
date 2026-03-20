@@ -231,6 +231,7 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
     const hint = isWrong ? '<span class="pick-hint">ваш выбор</span>' : '';
     return `<div class="series-team${dis}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
+      ${teamLogoHtml(team)}
       <span class="team-name">${team}</span>
       ${hint}
     </div>`;
@@ -288,6 +289,7 @@ function buildRoundSeriesCardReality(sid, roundIdx) {
     const isWinner = complete && result.winner === team;
     return `<div class="series-team disabled${isWinner ? ' winner' : ''}">
       <div class="team-pick-indicator"></div>
+      ${teamLogoHtml(team)}
       <span class="team-name">${team}</span>
     </div>`;
   };

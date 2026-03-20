@@ -449,6 +449,7 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     return `<div class="${cls}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
       ${badge}
+      ${teamLogoHtml(team)}
       <span class="team-name">${team}</span>
       ${hint}
     </div>`;
@@ -496,6 +497,7 @@ function renderSeriesCardReality(sid, isFinal = false, noId = false) {
     return `<div class="series-team disabled${isWinner ? ' winner' : ''}">
       <div class="team-pick-indicator"></div>
       ${badge}
+      ${teamLogoHtml(team)}
       <span class="team-name">${team}</span>
     </div>`;
   };
