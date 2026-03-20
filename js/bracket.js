@@ -440,7 +440,7 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
       </div>`;
     }
     const isSelected = !complete && pick.winner === team;
-    const isWinner   = complete && result.winner === team;
+    const isWinner   = complete && !!pick.winner && result.winner === team;
     const isPicked   = complete && pick.winner === team;
     const isWrong    = isPicked && !isWinner;
     const cls = `series-team${locked || complete ? ' disabled':''}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}`;
@@ -458,14 +458,18 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
   const gamesRow = renderGamesRowHTML(sid, pick, result, t2);
 
   let ptsChip = '';
-  if (complete && pick.winner) {
-    let pts = 0;
-    const rIdx = roundOfSeries(sid);
-    if (pick.winner === result.winner) {
-      pts += SCORING.winnerPoints[rIdx];
-      if (pick.score && pick.score === result.score) pts += SCORING.seriesScoreBonus;
+  if (complete) {
+    if (pick.winner) {
+      let pts = 0;
+      const rIdx = roundOfSeries(sid);
+      if (pick.winner === result.winner) {
+        pts += SCORING.winnerPoints[rIdx];
+        if (pick.score && pick.score === result.score) pts += SCORING.seriesScoreBonus;
+      }
+      ptsChip = `<div class="series-pts ${pts > 0 ? 'pts-pos' : 'pts-zero'}">${pts > 0 ? '+' + pts : '0'} очк.</div>`;
+    } else {
+      ptsChip = `<div class="series-pts pts-zero">Прогноз не сделан</div>`;
     }
-    ptsChip = `<div class="series-pts ${pts > 0 ? 'pts-pos' : 'pts-zero'}">${pts > 0 ? '+' + pts : '0'} очк.</div>`;
   }
 
   const cardCls = `series-card${isFinal?' final-series-card':''}${complete?' complete':''}${locked?' locked':''}`;

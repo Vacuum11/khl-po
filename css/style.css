@@ -1252,6 +1252,16 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 .series-pts.pts-pos  { color: var(--gold); }
 .series-pts.pts-zero { color: var(--text-3); }
 
+/* Live series score (shown for in-progress series in rounds view) */
+.series-live-score {
+  text-align: center;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--accent);
+  padding: .15rem .5rem;
+  letter-spacing: .02em;
+}
+
 /* Total score header in picks modal */
 .picks-total-header {
   font-size: .85rem;

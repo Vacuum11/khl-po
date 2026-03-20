@@ -246,6 +246,13 @@ function renderSeriesList() {
       adminResults[sid].complete = cb.checked;
     });
   });
+  container.querySelectorAll('.admin-live-score').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const sid = inp.dataset.sid;
+      if (!adminResults[sid]) adminResults[sid] = {};
+      adminResults[sid].liveScore = inp.value.trim() || null;
+    });
+  });
 }
 
 function buildAdminSeriesRow(s) {
@@ -280,7 +287,11 @@ function buildAdminSeriesRow(s) {
               ${result.complete ? 'checked' : ''}>
             Серия завершена
           </label>
-          ${result.complete ? '<span class="complete-badge">✓ Завершена</span>' : ''}
+          ${result.complete ? '<span class="complete-badge">✓ Завершена</span>' : `
+          <input type="text" class="admin-select admin-live-score" data-sid="${sid}"
+            placeholder="Текущий счёт (напр. 2–1)"
+            value="${result.liveScore || ''}"
+            style="width:160px">`}
         ` : `<span style="color:var(--text-3);font-size:.85rem">Ожидание предыдущих результатов…</span>`}
       </div>
     </div>
