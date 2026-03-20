@@ -44,23 +44,23 @@ const BRACKET = {
 // ============================================================
 const TEAM_LOGOS = {
   // Западная конференция
-  "Локомотив":   "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Lokomotiv_Yaroslavl_Logo.svg",
-  "Спартак":     "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Spartak_Moscow_Logo.svg",
-  "ЦСКА":        "https://commons.wikimedia.org/wiki/Special:FilePath/HC_CSKA_Moscow_Logo.svg",
-  "СКА":         "https://commons.wikimedia.org/wiki/Special:FilePath/HC_SKA_Saint_Petersburg_Logo.svg",
-  "Дин. Минск":  "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Dinamo_Minsk_Logo.svg",
-  "Дин. Москва": "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Dynamo_Moscow_Logo.svg",
-  "Северсталь":  "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Severstal_Cherepovets_Logo.svg",
-  "Торпедо":     "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Torpedo_Nizhny_Novgorod_Logo.svg",
+  "Локомотив":   "https://upload.wikimedia.org/wikipedia/ru/f/f4/HC_Lokomotiv_Logo.svg",
+  "Спартак":     "https://upload.wikimedia.org/wikipedia/commons/3/3e/HC_Spartak_Moscow_Logo.svg",
+  "ЦСКА":        "https://upload.wikimedia.org/wikipedia/commons/a/ad/HC_CSKA_Moscow_Logo.svg",
+  "СКА":         "https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_SKA_2015.svg",
+  "Дин. Минск":  "https://upload.wikimedia.org/wikipedia/ru/c/cc/HC_Dynamo_Minsk_Logo.svg",
+  "Дин. Москва": "https://upload.wikimedia.org/wikipedia/commons/9/99/HC_Dynamo_Moscow_Logo_2019.svg",
+  "Северсталь":  "https://upload.wikimedia.org/wikipedia/commons/2/25/Severstal_Cherepovets_logo.png",
+  "Торпедо":     "https://upload.wikimedia.org/wikipedia/ru/b/bd/Torpedo_NN_logo.svg",
   // Восточная конференция
-  "Металлург":   "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Metallurg_Magnitogorsk_Logo.svg",
-  "Сибирь":      "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Sibir_Novosibirsk_Logo.svg",
-  "Автомобилист":"https://commons.wikimedia.org/wiki/Special:FilePath/HC_Avtomobilist_Yekaterinburg_Logo.svg",
-  "Салават Юл":  "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Salavat_Yulaev_Ufa_Logo.svg",
-  "Авангард":    "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Avangard_Omsk_Logo.svg",
-  "Нефтехимик":  "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Neftekhimik_Nizhnekamsk_Logo.svg",
-  "Ак Барс":     "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Ak_Bars_Kazan_Logo.svg",
-  "Трактор":     "https://commons.wikimedia.org/wiki/Special:FilePath/HC_Traktor_Chelyabinsk_Logo.svg",
+  "Металлург":   "https://upload.wikimedia.org/wikipedia/de/8/88/HK_Metallurg_Magnitogorsk_Logo.svg",
+  "Сибирь":      "https://upload.wikimedia.org/wikipedia/ru/6/65/HC_Sibir_Logo.svg",
+  "Автомобилист":"https://upload.wikimedia.org/wikipedia/ru/a/ae/HC_Avtomobilist_Logo.svg",
+  "Салават Юл":  "https://upload.wikimedia.org/wikipedia/ru/a/a0/HC_Salavat_Yulaev_Logo.svg",
+  "Авангард":    "https://upload.wikimedia.org/wikipedia/ru/6/64/HC_Avangard_Logo.svg",
+  "Нефтехимик":  "https://upload.wikimedia.org/wikipedia/ru/5/5d/HC_Neftekhimik.svg",
+  "Ак Барс":     "https://upload.wikimedia.org/wikipedia/ru/7/75/HC_Ak_Bars_Logo.svg",
+  "Трактор":     "https://upload.wikimedia.org/wikipedia/ru/c/c8/Traktor_Chelyabinsk.svg",
 };
 
 // Helper: возвращает HTML тега <img> с логотипом команды + фолбэк на инициалы
