@@ -36,6 +36,7 @@ body {
   color: var(--text-1);
   min-height: 100vh;
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
 /* ── SCROLLBAR ─────────────────────────────────────── */
@@ -882,7 +883,8 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 
 .series-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  justify-content: center;
   gap: 1rem;
 }
 
@@ -1148,8 +1150,11 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 
 /* Phone */
 @media (max-width: 640px) {
-  .navbar { padding: .55rem .75rem; gap: .5rem; }
-  .navbar-nav .nav-link { padding: .4rem .6rem; font-size: .82rem; }
+  .navbar { padding: .55rem .75rem; gap: .5rem; flex-wrap: wrap; }
+  .navbar-brand { font-size: 1rem; }
+  .navbar-nav { gap: 0; }
+  .navbar-nav .nav-link { padding: .35rem .55rem; font-size: .8rem; }
+  .navbar-right { margin-left: auto; }
 
   .page-wrapper { padding: .75rem; }
   .page-header h2 { font-size: 1.4rem; }
@@ -1171,8 +1176,11 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   .save-bar .btn { width: 100%; justify-content: center; }
   .progress-bar { width: 100%; }
 
-  /* Series grid: 1 column */
-  .series-grid { grid-template-columns: 1fr; }
+  /* Series grid: 1 column, centered */
+  .series-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    justify-content: center;
+  }
 
   /* Leaderboard: minimal */
   .lb-header-row,
@@ -1263,6 +1271,21 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   text-transform: uppercase;
   letter-spacing: .05em;
   margin-left: .25rem;
+}
+
+/* Real-team divergence badge in picks view (shows who actually filled the slot) */
+.fact-team {
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  margin-left: auto;
+  font-size: .72rem;
+  color: #60a5fa;
+  font-style: italic;
+  white-space: nowrap;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Live series score (shown for in-progress series in rounds view) */
