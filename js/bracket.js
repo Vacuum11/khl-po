@@ -446,10 +446,12 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
   const locked    = isLocked;
   const thisRound = roundOfSeries(sid);
 
-  // Real teams in this series slot (for divergence indicator)
+  // Real teams in this series slot (for divergence indicator, R2+ only)
   const [rt1, rt2] = thisRound > 0 ? teamsForSeriesResults(sid) : [t1, t2];
+  const rt1differs = rt1 && rt1 !== '?' && rt1 !== t1;
+  const rt2differs = rt2 && rt2 !== '?' && rt2 !== t2;
 
-  const teamHtml = (team, realTeam) => {
+  const teamHtml = (team) => {
     if (!team || team === '?') {
       return `<div class="series-team disabled">
         <span class="team-name" style="color:var(--text-3)">TBD</span>
@@ -459,17 +461,12 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     const isWinner   = complete && !!pick.winner && result.winner === team;
     const isPicked   = complete && pick.winner === team;
     const isWrong    = isPicked && !isWinner;
-    // In picks view, mark teams that were eliminated in reality before this round
+    // Only mark eliminated in R2+ for teams that actually lost in a prior real series
     const eliminated = thisRound > 0 && !complete && isTeamEliminated(team);
     const cls = `series-team${locked || complete ? ' disabled':''}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}${eliminated?' eliminated':''}`;
     const badge = teamConfBadge(team);
     const hint = isWrong ? '<span class="pick-hint">ваш выбор</span>' : '';
     const elimBadge = eliminated ? '<span class="elim-badge">выбыл</span>' : '';
-    // Show who ACTUALLY fills this slot in reality when it differs from user's pick
-    const realDiffers = realTeam && realTeam !== '?' && realTeam !== team;
-    const factBadge = realDiffers
-      ? `<span class="fact-team">${teamLogoHtml(realTeam, 14)} ${realTeam}</span>`
-      : '';
     return `<div class="${cls}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
       ${badge}
@@ -477,9 +474,24 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
       <span class="team-name">${team}</span>
       ${elimBadge}
       ${hint}
-      ${factBadge}
     </div>`;
   };
+
+  // Fact-matchup banner: shown OUTSIDE dimmed rows so opacity doesn't affect it
+  const hasDivergence = rt1differs || rt2differs;
+  const factMatchup = hasDivergence ? `
+    <div class="fact-matchup">
+      <span class="fact-matchup-label">В реальности:</span>
+      <span class="fact-matchup-teams">
+        ${teamLogoHtml(rt1differs ? rt1 : t1, 14)}<span>${rt1differs ? rt1 : t1}</span>
+        <span class="fact-vs">—</span>
+        ${teamLogoHtml(rt2differs ? rt2 : t2, 14)}<span>${rt2differs ? rt2 : t2}</span>
+      </span>
+    </div>` : '';
+
+  const liveRow = !complete && result?.liveScore
+    ? `<div class="series-live-score">🟢 ${result.liveScore}</div>`
+    : '';
 
   const gamesRow = renderGamesRowHTML(sid, pick, result, t2);
 
@@ -502,8 +514,10 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
   const idAttr = noId ? '' : ` id="card-${sid}"`;
 
   return `<div class="${cardCls}"${idAttr}>
-    ${teamHtml(t1, rt1)}
-    ${teamHtml(t2, rt2)}
+    ${teamHtml(t1)}
+    ${teamHtml(t2)}
+    ${factMatchup}
+    ${liveRow}
     ${gamesRow}
     ${ptsChip}
   </div>`;
