@@ -32,7 +32,29 @@ function setActiveNavLink() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', setActiveNavLink);
+document.addEventListener('DOMContentLoaded', () => {
+  setActiveNavLink();
+
+  // Hamburger toggle
+  const toggle = document.getElementById('navbar-toggle');
+  const nav    = document.getElementById('navbar-nav');
+  const navbar = document.getElementById('main-navbar');
+  if (toggle && nav) {
+    toggle.addEventListener('click', () => {
+      const open = navbar.classList.toggle('nav-open');
+      toggle.setAttribute('aria-expanded', open);
+      toggle.textContent = open ? '✕' : '☰';
+    });
+    // Close menu when a nav link is clicked
+    nav.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        navbar.classList.remove('nav-open');
+        toggle.setAttribute('aria-expanded', false);
+        toggle.textContent = '☰';
+      });
+    });
+  }
+});
 
 // ── Bracket override from Firestore ──────────────────────
 // Admin can edit team names in the DB; this patches the global BRACKET constant.

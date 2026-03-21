@@ -112,6 +112,19 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   margin-left: auto;
 }
 
+/* Hamburger toggle — hidden on desktop */
+.navbar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-1);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: .3rem .5rem;
+  line-height: 1;
+  margin-left: auto;
+}
+
 .user-chip {
   display: flex;
   align-items: center;
@@ -1150,11 +1163,41 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
 
 /* Phone */
 @media (max-width: 640px) {
-  .navbar { padding: .55rem .75rem; gap: .5rem; flex-wrap: wrap; }
+  /* Navbar: brand on left, hamburger on right, nav drops below */
+  .navbar {
+    padding: .6rem .75rem;
+    gap: .5rem;
+    flex-wrap: wrap;
+    position: relative;
+  }
   .navbar-brand { font-size: 1rem; }
-  .navbar-nav { gap: 0; }
-  .navbar-nav .nav-link { padding: .35rem .55rem; font-size: .8rem; }
-  .navbar-right { margin-left: auto; }
+  .navbar-toggle { display: block; }
+  .navbar-right { margin-left: 0; order: 3; }
+
+  /* Nav links: hidden by default, full-width row when open */
+  .navbar-nav {
+    display: none;
+    order: 4;
+    width: 100%;
+    flex-direction: column;
+    gap: .25rem;
+    padding: .5rem 0;
+    border-top: 1px solid var(--border);
+  }
+  .navbar.nav-open .navbar-nav { display: flex; }
+  .navbar-nav .nav-link {
+    padding: .6rem .75rem;
+    font-size: .9rem;
+    border-radius: 7px;
+  }
+
+  /* Save bar: contained, no overflow */
+  .save-bar {
+    padding: .75rem 1rem;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .progress-bar { width: 100px; }
 
   .page-wrapper { padding: .75rem; }
   .page-header h2 { font-size: 1.4rem; }
@@ -1273,19 +1316,31 @@ h1,h2,h3,h4 { font-family: 'Oswald', sans-serif; letter-spacing: .03em; }
   margin-left: .25rem;
 }
 
-/* Real-team divergence badge in picks view (shows who actually filled the slot) */
-.fact-team {
-  display: inline-flex;
+/* Real matchup banner in picks view (shows who actually filled each slot) */
+.fact-matchup {
+  display: flex;
   align-items: center;
-  gap: .2rem;
-  margin-left: auto;
+  gap: .4rem;
+  padding: .3rem .75rem;
+  background: rgba(96,165,250,.07);
+  border-top: 1px solid rgba(96,165,250,.15);
   font-size: .72rem;
   color: #60a5fa;
-  font-style: italic;
-  white-space: nowrap;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+.fact-matchup-label {
+  flex-shrink: 0;
+  opacity: .7;
+}
+.fact-matchup-teams {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  flex-wrap: wrap;
+}
+.fact-matchup-teams .team-logo { border-radius: 2px; }
+.fact-vs {
+  color: var(--text-3);
+  margin: 0 .1rem;
 }
 
 /* Live series score (shown for in-progress series in rounds view) */
