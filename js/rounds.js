@@ -253,7 +253,10 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
   const useReversed = pick.winner && t2 && pick.winner === t2;
   const scores = ['4:0','4:1','4:2','4:3'];
   const scoresRev = ['0:4','1:4','2:4','3:4'];
-  const displayScores = useReversed ? scoresRev : scores;
+  // When complete: always show from the real winner's perspective regardless of user pick.
+  // When in progress: show from the user's chosen team's perspective.
+  const showReversed = complete ? (result?.winner === t2) : useReversed;
+  const displayScores = showReversed ? scoresRev : scores;
   const RREV = Object.fromEntries(scores.map((s, i) => [s, scoresRev[i]]));
   // Result score from t1's display perspective (reversed if actual winner is t2)
   const resultDisplayed = complete && result?.score
@@ -262,7 +265,8 @@ function buildRoundSeriesCard(sid, roundIdx, open, locked) {
 
   const gamesRow = scores.map((s, i) => {
     let cls = 'games-btn';
-    const isResult   = complete && resultDisplayed === displayScores[i];
+    // isResult: direct match on stored score (admin always stores '4:x' from winner's side)
+    const isResult   = complete && result?.score === s;
     const isUserPick = complete && pick.score === s;
     if (isResult) cls += ' result';
     if (isUserPick && !isResult) cls += ' user-pick';
