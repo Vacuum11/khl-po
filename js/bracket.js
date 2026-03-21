@@ -444,8 +444,12 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
   const result    = resultForSeries(sid);
   const complete  = result?.complete;
   const locked    = isLocked;
+  const thisRound = roundOfSeries(sid);
 
-  const teamHtml = (team) => {
+  // Real teams in this series slot (for divergence indicator)
+  const [rt1, rt2] = thisRound > 0 ? teamsForSeriesResults(sid) : [t1, t2];
+
+  const teamHtml = (team, realTeam) => {
     if (!team || team === '?') {
       return `<div class="series-team disabled">
         <span class="team-name" style="color:var(--text-3)">TBD</span>
@@ -456,12 +460,16 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
     const isPicked   = complete && pick.winner === team;
     const isWrong    = isPicked && !isWinner;
     // In picks view, mark teams that were eliminated in reality before this round
-    const thisRound  = roundOfSeries(sid);
     const eliminated = thisRound > 0 && !complete && isTeamEliminated(team);
     const cls = `series-team${locked || complete ? ' disabled':''}${isSelected?' selected':''}${isWinner?' winner':''}${isPicked?' user-pick':''}${eliminated?' eliminated':''}`;
     const badge = teamConfBadge(team);
     const hint = isWrong ? '<span class="pick-hint">ваш выбор</span>' : '';
     const elimBadge = eliminated ? '<span class="elim-badge">выбыл</span>' : '';
+    // Show who ACTUALLY fills this slot in reality when it differs from user's pick
+    const realDiffers = realTeam && realTeam !== '?' && realTeam !== team;
+    const factBadge = realDiffers
+      ? `<span class="fact-team">${teamLogoHtml(realTeam, 14)} ${realTeam}</span>`
+      : '';
     return `<div class="${cls}" data-sid="${sid}" data-team="${team}">
       <div class="team-pick-indicator"></div>
       ${badge}
@@ -469,6 +477,7 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
       <span class="team-name">${team}</span>
       ${elimBadge}
       ${hint}
+      ${factBadge}
     </div>`;
   };
 
@@ -493,8 +502,8 @@ function renderSeriesCard(sid, isFinal = false, noId = false) {
   const idAttr = noId ? '' : ` id="card-${sid}"`;
 
   return `<div class="${cardCls}"${idAttr}>
-    ${teamHtml(t1)}
-    ${teamHtml(t2)}
+    ${teamHtml(t1, rt1)}
+    ${teamHtml(t2, rt2)}
     ${gamesRow}
     ${ptsChip}
   </div>`;
