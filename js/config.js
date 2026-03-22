@@ -3,13 +3,12 @@
 // console.firebase.google.com → Project Settings → Your apps
 // ============================================================
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAo1Dk9QOKd6gnxi0FktCTkiS_79C_L3K0",
-  authDomain: "khl-po-2026.firebaseapp.com",
-  projectId: "khl-po-2026",
-  storageBucket: "khl-po-2026.firebasestorage.app",
-  messagingSenderId: "243676632030",
-  appId: "1:243676632030:web:d0d2508f54d6d73f20034f",
-  measurementId: "G-CFFMYNVBWB"
+  apiKey: "AIzaSyCvQyDnEk8UrB-zJq8B-FGfD_qiTI6Mmj8",
+  authDomain: "po-khl-2026-2.firebaseapp.com",
+  projectId: "po-khl-2026-2",
+  storageBucket: "po-khl-2026-2.firebasestorage.app",
+  messagingSenderId: "1039777672511",
+  appId: "1:1039777672511:web:369c8fdbba485793ec378a"
 };
 
 // ============================================================
